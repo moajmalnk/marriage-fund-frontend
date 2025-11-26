@@ -17,6 +17,19 @@ import { fetchDashboardStats } from '@/services/dashboard';
 // Import the Cropper Component
 import { ImageCropperDialog } from '@/components/ImageCropperDialog';
 
+// Get the API base URL to properly construct media URLs
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
+
+// Function to fix profile photo URLs
+const fixProfilePhotoUrl = (photoUrl: string) => {
+  if (photoUrl && photoUrl.startsWith('/media/')) {
+    // Prepend the backend base URL to make it a full URL
+    return `${BACKEND_BASE_URL}${photoUrl}`;
+  }
+  return photoUrl;
+};
+
 const Profile = () => {
   const { currentUser, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
@@ -64,7 +77,7 @@ const Profile = () => {
         marital_status: currentUser.marital_status || 'Unmarried',
         phone: currentUser.phone || '',
         email: currentUser.email || '',
-        profile_photo: currentUser.profile_photo || ''
+        profile_photo: fixProfilePhotoUrl(currentUser.profile_photo) || ''
       });
     }
   }, [currentUser]);
@@ -191,7 +204,7 @@ const Profile = () => {
               <div className="flex flex-col items-center gap-4 py-4">
                 <div className="relative inline-block">
                   <Avatar className="h-24 w-24 border-2 border-slate-200 dark:border-slate-700">
-                    <AvatarImage src={formData.profile_photo} alt="Profile" className="object-cover" />
+                    <AvatarImage src={fixProfilePhotoUrl(formData.profile_photo)} alt="Profile" className="object-cover" />
                     <AvatarFallback className="text-2xl bg-slate-100 dark:bg-slate-800">
                       {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
                     </AvatarFallback>
@@ -380,7 +393,7 @@ const Profile = () => {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4 pb-4 border-b border-blue-200 dark:border-blue-700">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={currentUser.profile_photo} alt="Profile" className="object-cover" />
+              <AvatarImage src={fixProfilePhotoUrl(currentUser.profile_photo)} alt="Profile" className="object-cover" />
               <AvatarFallback className="text-xl">{currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
             </Avatar>
             <div>

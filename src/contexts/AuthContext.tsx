@@ -10,7 +10,23 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
+// Get the API base URL to properly construct media URLs
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Function to fix profile photo URLs
+const fixProfilePhotoUrl = (user: any): User => {
+  if (user && user.profile_photo && user.profile_photo.startsWith('/media/')) {
+    // Prepend the backend base URL to make it a full URL
+    return {
+      ...user,
+      profile_photo: `${BACKEND_BASE_URL}${user.profile_photo}`
+    };
+  }
+  return user;
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -24,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           // Fetch the user's real profile from Django
           const response = await api.get('/users/me/');
-          setCurrentUser(response.data);
+          setCurrentUser(fixProfilePhotoUrl(response.data));
         } catch (error) {
           console.error("Session expired", error);
           logout();
@@ -62,15 +78,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('refresh_token', refresh);
       
       if (user) {
-          setCurrentUser(user);
-          localStorage.setItem('user', JSON.stringify(user));
+          setCurrentUser(fixProfilePhotoUrl(user));
+          localStorage.setItem('user', JSON.stringify(fixProfilePhotoUrl(user)));
           return true;
       }
       
       // Fallback
       const userResponse = await api.get('/users/me/');
-      setCurrentUser(userResponse.data);
-      localStorage.setItem('user', JSON.stringify(userResponse.data));
+      const fixedUser = fixProfilePhotoUrl(userResponse.data);
+      setCurrentUser(fixedUser);
+      localStorage.setItem('user', JSON.stringify(fixedUser));
       return true;
 
     } catch (error) {

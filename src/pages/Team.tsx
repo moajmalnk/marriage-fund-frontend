@@ -19,6 +19,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Added Avatar components
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 
+// Get the API base URL to properly construct media URLs
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
+
+// Function to fix profile photo URLs
+const fixProfilePhotoUrl = (photoUrl: string) => {
+  if (photoUrl && photoUrl.startsWith('/media/')) {
+    // Prepend the backend base URL to make it a full URL
+    return `${BACKEND_BASE_URL}${photoUrl}`;
+  }
+  return photoUrl;
+};
+
 // Memoized Stat Card Component
 const StatCard = memo(({ 
   title, 
@@ -371,7 +384,7 @@ const Team = () => {
     const map: Record<string, string> = {};
     if (Array.isArray(allUsers)) {
         allUsers.forEach((u: any) => {
-            if (u.profile_photo) map[u.id] = u.profile_photo;
+            if (u.profile_photo) map[u.id] = fixProfilePhotoUrl(u.profile_photo);
         });
     }
     return map;

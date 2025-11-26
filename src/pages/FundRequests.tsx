@@ -24,6 +24,19 @@ import { createWalletDeposit } from '@/services/wallet';
 import { toast } from '@/hooks/use-toast';
 import { fetchDashboardStats } from '@/services/dashboard';
 
+// Get the API base URL to properly construct media URLs
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
+
+// Function to fix profile photo URLs
+const fixProfilePhotoUrl = (photoUrl: string) => {
+  if (photoUrl && photoUrl.startsWith('/media/')) {
+    // Prepend the backend base URL to make it a full URL
+    return `${BACKEND_BASE_URL}${photoUrl}`;
+  }
+  return photoUrl;
+};
+
 const FundRequests = () => {
   const { currentUser, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
@@ -98,7 +111,7 @@ const FundRequests = () => {
     const map: Record<string, string> = {};
     if (Array.isArray(allUsers)) {
         allUsers.forEach((u: any) => {
-            if (u.profile_photo) map[u.id] = u.profile_photo;
+            if (u.profile_photo) map[u.id] = fixProfilePhotoUrl(u.profile_photo);
         });
     }
     return map;

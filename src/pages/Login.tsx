@@ -170,7 +170,7 @@ const Login = () => {
                 </Button>
               </form>
               
-              <div className="mt-8 p-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-lg border border-slate-200 dark:border-slate-600">
+              {/* <div className="mt-8 p-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-lg border border-slate-200 dark:border-slate-600">
                 <p className="text-xs font-medium text-slate-700 dark:text-slate-300 text-center mb-3">Demo Credentials:</p>
                 <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
                   <div className="flex justify-between items-center">
@@ -189,7 +189,7 @@ const Login = () => {
                     (Any password works for demo)
                   </p>
                 </div>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
         </div>

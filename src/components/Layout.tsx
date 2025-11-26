@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,6 +32,19 @@ import { useQuery } from '@tanstack/react-query';
 // UPDATED IMPORT
 import { fetchAllUsersPublic } from '@/services/users'; 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+// Get the API base URL to properly construct media URLs
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
+
+// Function to fix profile photo URLs
+const fixProfilePhotoUrl = (photoUrl: string) => {
+  if (photoUrl && photoUrl.startsWith('/media/')) {
+    // Prepend the backend base URL to make it a full URL
+    return `${BACKEND_BASE_URL}${photoUrl}`;
+  }
+  return photoUrl;
+};
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -577,7 +590,7 @@ const Layout = ({ children }: LayoutProps) => {
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative flex-shrink-0">
               <Avatar className="h-10 w-10 rounded-2xl border-2 border-blue-100 dark:border-blue-900 shadow-sm">
-                <AvatarImage src={currentUser.profile_photo} alt={currentUser.name} className="object-cover" />
+                <AvatarImage src={fixProfilePhotoUrl(currentUser.profile_photo)} alt={currentUser.name} className="object-cover" />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs font-bold rounded-2xl">
                   {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
                 </AvatarFallback>

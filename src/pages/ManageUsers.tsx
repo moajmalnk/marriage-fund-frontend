@@ -17,6 +17,19 @@ import { fetchUsers, createUser, updateUser, deleteUser } from '@/services/users
 // 1. Import the Cropper
 import { ImageCropperDialog } from '@/components/ImageCropperDialog';
 
+// Get the API base URL to properly construct media URLs
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
+
+// Function to fix profile photo URLs
+const fixProfilePhotoUrl = (photoUrl: string) => {
+  if (photoUrl && photoUrl.startsWith('/media/')) {
+    // Prepend the backend base URL to make it a full URL
+    return `${BACKEND_BASE_URL}${photoUrl}`;
+  }
+  return photoUrl;
+};
+
 const ManageUsers = () => {
   const { currentUser, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -184,7 +197,7 @@ const ManageUsers = () => {
       marital_status: user.marital_status,
       email: user.email || '',
       phone: user.phone || '',
-      profile_photo: user.profile_photo || '', 
+      profile_photo: fixProfilePhotoUrl(user.profile_photo) || '', 
       responsible_member: user.responsible_member || '',
       assigned_monthly_amount: user.assigned_monthly_amount?.toString() || '120000'
     });
@@ -247,7 +260,7 @@ const ManageUsers = () => {
               <div className="flex flex-col items-center gap-4 py-4">
                  <div className="relative inline-block">
                   <Avatar className="h-24 w-24 border-2 border-slate-200 dark:border-slate-700">
-                    <AvatarImage src={formData.profile_photo} alt="Profile" className="object-cover" />
+                    <AvatarImage src={fixProfilePhotoUrl(formData.profile_photo)} alt="Profile" className="object-cover" />
                     <AvatarFallback className="text-2xl bg-slate-100 dark:bg-slate-800">
                       {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
                     </AvatarFallback>
@@ -442,7 +455,7 @@ const ManageUsers = () => {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.profile_photo} alt={user.name} />
+                          <AvatarImage src={fixProfilePhotoUrl(user.profile_photo)} alt={user.name} />
                           <AvatarFallback className="text-xs">
                             {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                           </AvatarFallback>
