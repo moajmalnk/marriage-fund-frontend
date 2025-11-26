@@ -168,7 +168,7 @@ All colors MUST be HSL.
     user-select: none;
   }
 
-  /* Hide notification/toast sections */
+  /* Hide notification/toast sections
   section[aria-label*="Notifications"],
   div[role="region"][aria-label*="Notifications"],
   [data-radix-toast-viewport],
@@ -177,7 +177,7 @@ All colors MUST be HSL.
     visibility: hidden !important;
     opacity: 0 !important;
     pointer-events: none !important;
-  }
+  } */
 }
 
 @layer components {

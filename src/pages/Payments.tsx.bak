@@ -1,0 +1,90 @@
+  // Helper: Calculate Remaining Amount to Collect for a Member
+  const getMemberRemainingToCollect = (member: any) => {
+    const target = getMemberTarget(member);
+    const collected = getMemberTotalCollected(member.id);
+    return Math.max(0, target - collected);
+  };
+
+  // Helper: Get recorded by name with fallbacks
+  const getRecordedByName = (payment: any) => {
+    // If we have a recorded_by_name, use it
+    if (payment.recorded_by_name && payment.recorded_by_name.trim() !== '') {
+      return payment.recorded_by_name;
+    }
+    
+    // Fallback to username if available
+    if (payment.recorded_by_username) {
+      return payment.recorded_by_username;
+    }
+    
+    // Default fallback
+    return 'Admin';
+  };
+
+  // Helper: Format Time properly (e.g. 2:30 PM)
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const formattedHours = hours % 12 || 12;
+    return `${formattedHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  return (
+    <div className="flex flex-col">
+      <div className="overflow-x-auto">
+        <table className="table-auto w-full">
+          <thead>
+            <tr>
+              <th className="text-left">Member</th>
+              <th className="text-left">Target</th>
+              <th className="text-left">Collected</th>
+              <th className="text-left">Remaining</th>
+              <th className="text-left">Recorded By</th>
+              <th className="text-left">Date</th>
+              <th className="text-left">Time</th>
+              <th className="text-left">Amount</th>
+              <th className="text-left">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {members.map((member) => (
+              <tr key={member.id}>
+                <td className="text-slate-600 dark:text-slate-400">
+                  {member.name}
+                </td>
+                <td className="text-slate-600 dark:text-slate-400">
+                  {getMemberTarget(member)}
+                </td>
+                <td className="text-slate-600 dark:text-slate-400">
+                  {getMemberTotalCollected(member.id)}
+                </td>
+                <td className="text-slate-600 dark:text-slate-400">
+                  {getMemberRemainingToCollect(member)}
+                </td>
+                {member.payments.map((payment) => (
+                  <tr key={payment.id}>
+                    <TableCell className="text-slate-600 dark:text-slate-400 hidden md:table-cell">
+                      {payment.recorded_by_name || payment.recorded_by_username || 'Admin'}
+                    </TableCell>
+                    <TableCell className="text-slate-600 dark:text-slate-400 hidden md:table-cell">
+                      {payment.date}
+                    </TableCell>
+                    <TableCell className="text-slate-600 dark:text-slate-400 hidden md:table-cell">
+                      {formatTime(payment.time)}
+                    </TableCell>
+                    <TableCell className="text-slate-600 dark:text-slate-400 hidden md:table-cell">
+                      {payment.amount}
+                    </TableCell>
+                    <TableCell className="text-slate-600 dark:text-slate-400 hidden md:table-cell">
+                      {payment.notes}
+                    </TableCell>
+                  </tr>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

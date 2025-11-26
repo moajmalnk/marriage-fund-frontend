@@ -1,8 +1,14 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getTeamStructure, getUserTotalContributed, hasUserPaidThisMonth, mockUsers, getTotalCollected, getTotalSpent } from '@/lib/mockData';
-import { User, CheckCircle, XCircle, Award, Users, Wallet, TrendingUp, Calendar, Plus, MessageSquare, CreditCard, DollarSign, Heart, FileCheck, AlertCircle, Trophy, Medal, Crown, Sparkles, Target, Zap, Star, ArrowUpRight, Eye, BarChart3, UserPlus, UserMinus, Settings, Shield, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTeamStructure } from '@/services/team';
+import { fetchUsers } from '@/services/users'; // Added to fetch profile photos
+import { fetchDashboardStats } from '@/services/dashboard';
+import { 
+  User, Award, Users, Wallet, TrendingUp, Calendar, Target, 
+  CreditCard, DollarSign, Heart, FileCheck, AlertCircle, Trophy, 
+  Medal, Crown, BarChart3, ArrowUpRight 
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -10,9 +16,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; // Added Avatar components
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 
-// Memoized Stat Card Component for Performance
+// Memoized Stat Card Component
 const StatCard = memo(({ 
   title, 
   value, 
@@ -65,19 +72,31 @@ const StatCard = memo(({
 const TeamCard = memo(({ 
   team, 
   rank, 
-  rankInfo 
+  rankInfo,
+  globalTarget,
+  userPhotos // Receive photo map
 }: {
   team: any;
   rank: number;
   rankInfo: any;
+  globalTarget: number;
+  userPhotos: Record<string, string>;
 }) => {
   const RankIcon = rankInfo.icon;
-  const leaderMarriageAmount = 120000;
-  const leaderToCollect = leaderMarriageAmount - team.leaderTotalPaid;
+  
+  // Calculations
+  const leaderTarget = team.leaderTotalTarget || globalTarget;
+  const leaderPaid = team.leaderTotalPaid || 0;
+  const leaderToCollect = Math.max(0, leaderTarget - leaderPaid);
+  const leaderProgress = leaderTarget > 0 ? (leaderPaid / leaderTarget) * 100 : 0;
+
+  const teamTotalTarget = team.teamTotalTarget || ((team.members.length + 1) * globalTarget);
+  const teamTotalPaid = team.teamTotalPaid || 0;
+  const teamTotalToCollect = Math.max(0, teamTotalTarget - teamTotalPaid);
+  const teamProgress = teamTotalTarget > 0 ? (teamTotalPaid / teamTotalTarget) * 100 : 0;
 
   return (
     <Card className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:scale-[1.01] border-0 bg-gradient-to-br from-white/80 to-slate-50/80 dark:from-slate-900/80 dark:to-slate-800/80 backdrop-blur-sm">
-      {/* Glassmorphism overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent dark:from-slate-800/10" />
       
       <CardHeader className="relative">
@@ -99,11 +118,9 @@ const TeamCard = memo(({
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {/* Rank Icon Badge */}
               <div className={`${rankInfo.bgColor} ${rankInfo.borderColor} border-2 rounded-full p-3 shadow-lg backdrop-blur-sm transform hover:scale-110 transition-transform duration-300`}>
                 <RankIcon className={`h-6 w-6 ${rankInfo.color}`} />
               </div>
-              {/* Rank Text Badge */}
               <Badge variant="outline" className={`${rankInfo.color} ${rankInfo.borderColor} border-2 font-bold text-base px-4 py-2 shadow-lg hover:shadow-xl transition-all duration-300`}>
                 🏆 Rank #{rank}
               </Badge>
@@ -114,39 +131,38 @@ const TeamCard = memo(({
             <div className="text-center p-3 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Total Target</p>
               <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                ₹{team.teamTotalTarget.toLocaleString('en-IN')}
+                ₹{Number(teamTotalTarget).toLocaleString('en-IN')}
               </p>
             </div>
             <div className="text-center p-3 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">To Collect</p>
               <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                ₹{team.teamTotalToCollect.toLocaleString('en-IN')}
+                ₹{Number(teamTotalToCollect).toLocaleString('en-IN')}
               </p>
             </div>
             <div className="text-center p-3 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Total Paid</p>
               <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                ₹{team.teamTotalPaid.toLocaleString('en-IN')}
+                ₹{Number(teamTotalPaid).toLocaleString('en-IN')}
               </p>
             </div>
             <div className="text-center p-3 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Progress</p>
               <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                {team.teamProgress.toFixed(1)}%
+                {Number(teamProgress).toFixed(1)}%
               </p>
             </div>
           </div>
           
-          {/* Enhanced Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm font-medium text-slate-600 dark:text-slate-400">
               <span>Team Progress</span>
-              <span>{team.teamProgress.toFixed(1)}%</span>
+              <span>{Number(teamProgress).toFixed(1)}%</span>
             </div>
             <div className="relative w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <div 
                 className="absolute inset-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500 rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${Math.min(team.teamProgress, 100)}%` }}
+                style={{ width: `${Math.min(teamProgress, 100)}%` }}
               />
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
             </div>
@@ -159,9 +175,12 @@ const TeamCard = memo(({
         <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/50 dark:to-slate-900/50 border border-slate-200/50 dark:border-slate-700/50">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
-                <Award className="h-6 w-6" />
-              </div>
+              <Avatar className="h-12 w-12 rounded-2xl shadow-lg border-2 border-blue-100 dark:border-blue-900">
+                <AvatarImage src={userPhotos[team.responsible_member.id]} alt={team.responsible_member.name} className="object-cover" />
+                <AvatarFallback className="rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                  <Award className="h-6 w-6" />
+                </AvatarFallback>
+              </Avatar>
               <div>
                 <h4 className="font-bold text-slate-900 dark:text-slate-100 text-lg">
                   {team.responsible_member.name}
@@ -173,7 +192,7 @@ const TeamCard = memo(({
             </div>
             <div className="text-left sm:text-right">
               <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                ₹{team.leaderTotalPaid.toLocaleString('en-IN')}
+                ₹{Number(leaderPaid).toLocaleString('en-IN')}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">Paid</p>
             </div>
@@ -183,7 +202,7 @@ const TeamCard = memo(({
             <div className="p-2 rounded-xl bg-white/50 dark:bg-slate-800/50">
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Target</p>
               <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                ₹{leaderMarriageAmount.toLocaleString('en-IN')}
+                ₹{leaderTarget.toLocaleString('en-IN')}
               </p>
             </div>
             <div className="p-2 rounded-xl bg-white/50 dark:bg-slate-800/50">
@@ -195,7 +214,7 @@ const TeamCard = memo(({
             <div className="p-2 rounded-xl bg-white/50 dark:bg-slate-800/50">
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Progress</p>
               <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                {((team.leaderTotalPaid / leaderMarriageAmount) * 100).toFixed(1)}%
+                {leaderProgress.toFixed(1)}%
               </p>
             </div>
           </div>
@@ -203,12 +222,12 @@ const TeamCard = memo(({
           <div className="space-y-2">
             <div className="flex justify-between text-xs font-medium text-slate-600 dark:text-slate-400">
               <span>Progress</span>
-              <span>{((team.leaderTotalPaid / leaderMarriageAmount) * 100).toFixed(1)}%</span>
+              <span>{leaderProgress.toFixed(1)}%</span>
             </div>
             <div className="relative w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <div 
                 className="absolute inset-0 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${Math.min((team.leaderTotalPaid / leaderMarriageAmount) * 100, 100)}%` }}
+                style={{ width: `${Math.min(leaderProgress, 100)}%` }}
               />
             </div>
           </div>
@@ -222,18 +241,21 @@ const TeamCard = memo(({
           </h4>
           <div className="grid gap-3">
             {team.members.map((member: any) => {
-              const memberTotalPaid = getUserTotalContributed(member.id);
-              const memberMarriageAmount = 120000;
-              const memberToCollect = memberMarriageAmount - memberTotalPaid;
-              const memberProgress = (memberTotalPaid / memberMarriageAmount) * 100;
+              const memberPaid = member.total_paid || 0;
+              const memberTarget = globalTarget;
+              const memberToCollect = Math.max(0, memberTarget - memberPaid);
+              const memberProgress = memberTarget > 0 ? (memberPaid / memberTarget) * 100 : 0;
 
               return (
                 <div key={member.id} className="group/member p-4 rounded-2xl bg-gradient-to-br from-slate-50/50 to-white/50 dark:from-slate-800/30 dark:to-slate-900/30 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg transition-all duration-300 hover:scale-[1.01]">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center text-white shadow-md group-hover/member:scale-110 transition-transform duration-300">
-                        <User className="h-5 w-5" />
-                      </div>
+                      <Avatar className="h-10 w-10 rounded-xl shadow-md group-hover/member:scale-110 transition-transform duration-300">
+                        <AvatarImage src={userPhotos[member.id]} alt={member.name} className="object-cover" />
+                        <AvatarFallback className="rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 text-white">
+                          <User className="h-5 w-5" />
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
                         <p className="font-semibold text-slate-900 dark:text-slate-100">{member.name}</p>
                         <p className="text-sm text-slate-600 dark:text-slate-400">{member.marital_status}</p>
@@ -241,7 +263,7 @@ const TeamCard = memo(({
                     </div>
                     <div className="text-left sm:text-right">
                       <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                        ₹{memberTotalPaid.toLocaleString('en-IN')}
+                        ₹{Number(memberPaid).toLocaleString('en-IN')}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">Paid</p>
                     </div>
@@ -251,7 +273,7 @@ const TeamCard = memo(({
                     <div className="p-2 rounded-lg bg-white/50 dark:bg-slate-800/50">
                       <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Target</p>
                       <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                        ₹{memberMarriageAmount.toLocaleString('en-IN')}
+                        ₹{memberTarget.toLocaleString('en-IN')}
                       </p>
                     </div>
                     <div className="p-2 rounded-lg bg-white/50 dark:bg-slate-800/50">
@@ -324,54 +346,76 @@ const Team = () => {
   const [isSubmittingTeamManagement, setIsSubmittingTeamManagement] = useState(false);
   const [teamManagementErrors, setTeamManagementErrors] = useState<{[key: string]: string}>({});
 
+  // 1. Fetch Data
+  const { data: teamsData = [], isLoading: isTeamsLoading } = useQuery({
+    queryKey: ['teamStructure'],
+    queryFn: fetchTeamStructure,
+    enabled: !!currentUser,
+  });
+
+  const { data: dashboardStats, isLoading: isStatsLoading } = useQuery({
+    queryKey: ['dashboardStats'],
+    queryFn: fetchDashboardStats,
+    enabled: !!currentUser,
+  });
+
+  // Added: Fetch all users to get profile photos
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: fetchUsers,
+    enabled: !!currentUser,
+  });
+
+  // Create a map of user IDs to profile photos for quick lookup
+  const userPhotos = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (Array.isArray(allUsers)) {
+        allUsers.forEach((u: any) => {
+            if (u.profile_photo) map[u.id] = u.profile_photo;
+        });
+    }
+    return map;
+  }, [allUsers]);
+
   // Check if terms have been acknowledged
   useEffect(() => {
     const acknowledged = localStorage.getItem('cbms-terms-acknowledged');
     setHasAcknowledgedTerms(acknowledged === 'true');
   }, []);
 
-  // Memoized calculations for performance
+  // 2. Calculate Dynamic Stats
   const fundStats = useMemo(() => {
-  const totalUsers = mockUsers.filter(u => u.role !== 'admin').length;
-    const totalMarriageAmount = totalUsers * 120000;
-  const totalPaidAmount = getTotalCollected();
-    const spendAmount = getTotalSpent();
-    const balanceAmount = totalPaidAmount - spendAmount;
-    const toCollectAmount = totalMarriageAmount - totalPaidAmount;
-    const progressPercentage = (totalPaidAmount / totalMarriageAmount) * 100;
+    if (!dashboardStats) return {
+      totalUsers: 0, totalMarriageAmount: 0, totalPaidAmount: 0,
+      spendAmount: 0, balanceAmount: 0, toCollectAmount: 0, progressPercentage: 0,
+      perPersonTarget: 0
+    };
+
+    const totalUsers = (dashboardStats.demographics?.married || 0) + (dashboardStats.demographics?.unmarried || 0);
+    
+    // LOGIC: One Person Target = 5000 * Total Members
+    const perPersonTarget = 5000 * totalUsers;
+    
+    // LOGIC: Total System Target = (One Person Target) * (Total Members)
+    const grandTotalTarget = perPersonTarget * totalUsers;
+
+    const totalPaidAmount = dashboardStats.financials?.collected || 0;
+    const spendAmount = dashboardStats.financials?.disbursed || 0;
+    const balanceAmount = dashboardStats.financials?.balance || 0;
+    const toCollectAmount = Math.max(0, grandTotalTarget - totalPaidAmount);
+    const progressPercentage = grandTotalTarget > 0 ? (totalPaidAmount / grandTotalTarget) * 100 : 0;
 
     return {
       totalUsers,
-      totalMarriageAmount,
+      totalMarriageAmount: grandTotalTarget,
+      perPersonTarget, // Passing this down to TeamCards
       totalPaidAmount,
       spendAmount,
       balanceAmount,
       toCollectAmount,
       progressPercentage
     };
-  }, []);
-
-  const teamsWithRanking = useMemo(() => {
-    const teams = getTeamStructure();
-    return teams.map((team) => {
-    const leaderTotalPaid = getUserTotalContributed(team.responsible_member.id);
-    const teamMembersTotalPaid = team.members.reduce((sum, member) => sum + getUserTotalContributed(member.id), 0);
-    const teamTotalPaid = leaderTotalPaid + teamMembersTotalPaid;
-      const teamTotalTarget = (team.members.length + 1) * 120000;
-    const teamTotalToCollect = teamTotalTarget - teamTotalPaid;
-    const teamProgress = (teamTotalPaid / teamTotalTarget) * 100;
-
-    return {
-      ...team,
-      leaderTotalPaid,
-      teamMembersTotalPaid,
-      teamTotalPaid,
-      teamTotalTarget,
-      teamTotalToCollect,
-      teamProgress
-    };
-    }).sort((a, b) => b.teamTotalPaid - a.teamTotalPaid);
-  }, []);
+  }, [dashboardStats]);
 
   // Memoized rank icon helper
   const getRankIcon = useCallback((rank: number) => {
@@ -401,7 +445,7 @@ const Team = () => {
     }
   }, [hasAcknowledgedTerms]);
   
-  if (isLoading) {
+  if (isLoading || isTeamsLoading || isStatsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="relative">
@@ -418,175 +462,45 @@ const Team = () => {
   const canRequestFunds = currentUser.role === 'member' || currentUser.role === 'responsible_member';
   const canDepositWallet = currentUser.role === 'member' || currentUser.role === 'responsible_member';
 
-  // Wallet deposit handlers
+  // Handlers
   const handleWalletInputChange = (field: string, value: string) => {
-    setWalletFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setWalletFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Fund request handlers
   const handleFundRequestInputChange = (field: string, value: string) => {
-    setFundRequestFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFundRequestFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleWalletSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmittingWallet(true);
-
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      console.log('Wallet deposit submitted:', {
-        user: currentUser.name,
-        amount: walletFormData.amount,
-        paymentMethod: walletFormData.paymentMethod,
-        transactionId: walletFormData.transactionId,
-        notes: walletFormData.notes
-      });
-
-      // Reset form and close modal
-      setWalletFormData({
-        amount: '',
-        paymentMethod: 'bank_transfer',
-        transactionId: '',
-        notes: ''
-      });
-      setShowWalletModal(false);
-      
-      console.log('Wallet deposit request submitted successfully!');
-    } catch (error) {
-      console.error('Error submitting wallet deposit:', error);
-    } finally {
-      setIsSubmittingWallet(false);
-    }
+    setTimeout(() => {
+       setShowWalletModal(false);
+       setIsSubmittingWallet(false);
+    }, 1000);
   };
 
   const handleFundRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmittingFundRequest(true);
-
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      console.log('Fund request submitted:', {
-        user: currentUser.name,
-        amount: fundRequestFormData.amount,
-        reason: fundRequestFormData.reason,
-        detailedReason: fundRequestFormData.detailedReason
-      });
-
-      // Reset form and close modal
-      setFundRequestFormData({
-        amount: '',
-        reason: '',
-        detailedReason: ''
-      });
-      setShowFundRequestModal(false);
-      
-      console.log('Fund request submitted successfully!');
-    } catch (error) {
-      console.error('Error submitting fund request:', error);
-    } finally {
-      setIsSubmittingFundRequest(false);
-    }
-  };
-
-  // Team Management Handlers
-  const handleTeamManagementInputChange = (field: string, value: string) => {
-    setTeamManagementFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    // Clear error when user starts typing
-    if (teamManagementErrors[field]) {
-      setTeamManagementErrors(prev => ({
-        ...prev,
-        [field]: ''
-      }));
-    }
-  };
-
-  const validateTeamManagementForm = () => {
-    const newErrors: {[key: string]: string} = {};
-    
-    if (teamManagementMode === 'add_member') {
-      if (!teamManagementFormData.memberName) {
-        newErrors.memberName = 'Please enter member name';
-      }
-      if (!teamManagementFormData.username) {
-        newErrors.username = 'Please enter username';
-      }
-      if (!teamManagementFormData.assignedAmount) {
-        newErrors.assignedAmount = 'Please enter assigned amount';
-      } else if (parseFloat(teamManagementFormData.assignedAmount) <= 0) {
-        newErrors.assignedAmount = 'Amount must be greater than 0';
-      }
-      if (!teamManagementFormData.responsibleMemberId) {
-        newErrors.responsibleMemberId = 'Please select responsible member';
-      }
-    } else if (teamManagementMode === 'assign_member') {
-      if (!teamManagementFormData.selectedMemberId) {
-        newErrors.selectedMemberId = 'Please select a member';
-      }
-      if (!teamManagementFormData.responsibleMemberId) {
-        newErrors.responsibleMemberId = 'Please select responsible member';
-      }
-    } else if (teamManagementMode === 'remove_member') {
-      if (!teamManagementFormData.selectedMemberId) {
-        newErrors.selectedMemberId = 'Please select a member to remove';
-      }
-    }
-    
-    setTeamManagementErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setTimeout(() => {
+       setShowFundRequestModal(false);
+       setIsSubmittingFundRequest(false);
+    }, 1000);
   };
 
   const handleTeamManagementSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateTeamManagementForm()) {
-      return;
-    }
-
     setIsSubmittingTeamManagement(true);
-
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      console.log('Team management action submitted:', {
-        mode: teamManagementMode,
-        data: teamManagementFormData,
-        user: currentUser.name
-      });
-
-      // Reset form and close modal
-      setTeamManagementFormData({
-        memberName: '',
-        username: '',
-        maritalStatus: 'Unmarried',
-        assignedAmount: '',
-        responsibleMemberId: '',
-        selectedMemberId: ''
-      });
-      setTeamManagementErrors({});
-      setShowTeamManagementModal(false);
-      
-      console.log('Team management action completed successfully!');
-    } catch (error) {
-      console.error('Error submitting team management action:', error);
-    } finally {
-      setIsSubmittingTeamManagement(false);
-    }
+    setTimeout(() => {
+       setShowTeamManagementModal(false);
+       setIsSubmittingTeamManagement(false);
+    }, 1000);
   };
 
+  const handleTeamManagementInputChange = (field: string, value: string) => {
+    setTeamManagementFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
@@ -632,7 +546,7 @@ const Team = () => {
           )}
       </div>
 
-      {/* Team Statistics Cards */}
+      {/* Team Statistics Cards (6-Grid) */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
           <CardContent className="p-3 sm:p-4 lg:p-6">
@@ -657,7 +571,7 @@ const Team = () => {
               <div className="min-w-0 flex-1">
                 <p className="text-xs sm:text-sm font-medium text-emerald-600 dark:text-emerald-400">Total Marriage Fund</p>
                 <p className="text-lg sm:text-xl lg:text-2xl font-bold text-emerald-900 dark:text-emerald-100">₹{fundStats.totalMarriageAmount.toLocaleString('en-IN')}</p>
-                <p className="text-xs text-emerald-500 dark:text-emerald-400">₹120,000 per user</p>
+                <p className="text-xs text-emerald-500 dark:text-emerald-400">Target Amount</p>
               </div>
             </div>
           </CardContent>
@@ -788,7 +702,7 @@ const Team = () => {
         </Card>
       {/* Team Cards Section */}
       <div className="space-y-8">
-          {teamsWithRanking.map((team, index) => {
+          {teamsData.map((team: any, index: number) => {
             const rank = index + 1;
             const rankInfo = getRankIcon(rank);
             const isTopThree = rank <= 3;
@@ -810,6 +724,8 @@ const Team = () => {
                   team={team}
                   rank={rank}
                   rankInfo={rankInfo}
+                  globalTarget={fundStats.perPersonTarget}
+                  userPhotos={userPhotos}
                 />
                       </div>
                     );

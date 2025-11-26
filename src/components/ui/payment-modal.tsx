@@ -9,31 +9,17 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import DatePicker from '@/components/ui/date-picker';
 import { Badge } from '@/components/ui/badge';
 
-interface Payment {
-  id: string;
-  user_id: string;
-  amount: number;
-  date: string;
-  time: string;
-  recorded_by_name: string;
-  notes?: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  assigned_monthly_amount: number;
-}
-
+// Types based on your Django Backend
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (payment: Omit<Payment, 'id' | 'recorded_by_name'>) => void;
+  onSave: (payment: any) => void;
   onDelete?: (paymentId: string) => void;
-  payment?: Payment | null;
-  users: User[];
+  payment?: any;
+  users: any[];
   currentUserName: string;
   mode: 'create' | 'edit' | 'delete';
+  isLoading?: boolean; // Added to support loading state from mutations
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -44,30 +30,31 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   payment,
   users,
   currentUserName,
-  mode
+  mode,
+  isLoading = false
 }) => {
   const [formData, setFormData] = useState({
-    user_id: '',
+    user: '', // Changed from user_id to user to match backend
     amount: '',
     date: '',
     time: '',
     notes: ''
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (payment && mode === 'edit') {
+    if (payment && (mode === 'edit' || mode === 'delete')) {
       setFormData({
-        user_id: payment.user_id,
+        user: payment.user.toString(),
         amount: payment.amount.toString(),
         date: payment.date,
         time: payment.time,
         notes: payment.notes || ''
       });
-    } else if (mode === 'create') {
+    } else {
+      // Reset for create mode
       setFormData({
-        user_id: '',
+        user: '',
         amount: '',
         date: '',
         time: '',
@@ -79,9 +66,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
-    
-    if (!formData.user_id) {
-      newErrors.user_id = 'Please select a member';
+    if (!formData.user) {
+      newErrors.user = 'Please select a member';
     }
     
     if (!formData.amount) {
@@ -94,27 +80,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       newErrors.date = 'Please select the payment date';
     }
     
-    if (!formData.time) {
-      newErrors.time = 'Please enter the payment time';
-    }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (mode === 'delete') {
       if (onDelete && payment) {
-        setIsSubmitting(true);
-        try {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          onDelete(payment.id);
-          onClose();
-        } finally {
-          setIsSubmitting(false);
-        }
+        onDelete(payment.id);
       }
       return;
     }
@@ -123,24 +97,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       return;
     }
 
-    setIsSubmitting(true);
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const paymentData = {
-        user_id: formData.user_id,
-        amount: parseFloat(formData.amount),
-        date: formData.date,
-        time: formData.time,
-        notes: formData.notes
-      };
-      
-      onSave(paymentData);
-      onClose();
-    } finally {
-      setIsSubmitting(false);
-    }
+    const paymentData = {
+      user: formData.user,
+      amount: parseFloat(formData.amount),
+      date: formData.date,
+      time: formData.time || new Date().toTimeString().split(' ')[0],
+      notes: formData.notes,
+      transaction_type: 'COLLECT' // Default to COLLECT for manual entries
+    };
+    onSave(paymentData);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -149,8 +114,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
-
-  const selectedUser = users.find(u => u.id === formData.user_id);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -204,13 +167,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     <div>
                       <span className="text-slate-600 dark:text-slate-400">Member:</span>
                       <p className="font-medium text-slate-900 dark:text-slate-100">
-                        {users.find(u => u.id === payment.user_id)?.name}
+                        {payment.user_name}
                       </p>
                     </div>
                     <div>
                       <span className="text-slate-600 dark:text-slate-400">Amount:</span>
                       <p className="font-medium text-slate-900 dark:text-slate-100">
-                        ₹{payment.amount.toLocaleString('en-IN')}
+                        ₹{Number(payment.amount).toLocaleString('en-IN')}
                       </p>
                     </div>
                     <div>
@@ -239,29 +202,29 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     Select Member
                   </Label>
                   <Select 
-                    value={formData.user_id} 
-                    onValueChange={(value) => handleInputChange('user_id', value)}
+                    value={formData.user} 
+                    onValueChange={(value) => handleInputChange('user', value)}
                   >
                     <SelectTrigger className={`h-12 border-slate-300 focus:border-blue-500 ${
-                      errors.user_id ? 'border-red-500' : ''
+                      errors.user ? 'border-red-500' : ''
                     }`}>
                       <SelectValue placeholder="Choose a member" />
                     </SelectTrigger>
                     <SelectContent>
                       {users.map(user => (
-                        <SelectItem key={user.id} value={user.id} className="py-3">
-                          <div className="flex items-center justify-between w-full">
-                            <span className="font-medium">{user.name}</span>
+                        <SelectItem key={user.id} value={user.id.toString()} className="py-3">
+                          <div className="flex items-center justify-between w-full gap-4">
+                            <span className="font-medium">{user.name || user.username}</span>
                             <Badge variant="outline" className="ml-2 text-xs">
-                              ₹{user.assigned_monthly_amount}/month
+                              ₹{Number(user.assigned_monthly_amount || 100000).toLocaleString('en-IN')}/target
                             </Badge>
                           </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.user_id && (
-                    <p className="text-red-600 dark:text-red-400 text-sm">{errors.user_id}</p>
+                  {errors.user && (
+                    <p className="text-red-600 dark:text-red-400 text-sm">{errors.user}</p>
                   )}
                 </div>
 
@@ -308,20 +271,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 {/* Time */}
                 <div className="grid gap-2">
                   <Label htmlFor="time" className="text-sm font-medium">
-                    Payment Time
+                    Payment Time (Optional)
                   </Label>
                   <Input
                     id="time"
                     type="time"
                     value={formData.time}
                     onChange={(e) => handleInputChange('time', e.target.value)}
-                    className={`h-12 border-slate-300 focus:border-blue-500 ${
-                      errors.time ? 'border-red-500' : ''
-                    }`}
+                    className="h-12 border-slate-300 focus:border-blue-500"
                   />
-                  {errors.time && (
-                    <p className="text-red-600 dark:text-red-400 text-sm">{errors.time}</p>
-                  )}
                 </div>
 
                 {/* Notes */}
@@ -346,13 +304,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           <Button
             variant="outline"
             onClick={onClose}
-            disabled={isSubmitting}
+            disabled={isLoading}
           >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isLoading}
             className={`${
               mode === 'create' 
                 ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700' 
@@ -361,7 +319,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700'
             } text-white`}
           >
-            {isSubmitting ? (
+            {isLoading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                 {mode === 'delete' ? 'Deleting...' : 'Saving...'}

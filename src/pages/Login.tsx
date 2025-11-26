@@ -17,22 +17,22 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+ const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(''); // Clear any previous errors
-    
+    setError('');
+
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const success = await login(username, password); 
       
-      if (login(username, password)) {
-        console.log("Login Successful - Welcome to CBMS Fund Management");
+      if (success) {
+        console.log("Login Successful");
         navigate('/dashboard');
       } else {
-        setError('Invalid username or password. Please check your credentials and try again.');
-        console.log("Login Failed - Invalid username or password");
+        setError('Invalid username or password.');
       }
+    } catch (err) {
+      setError('Connection error. Is the backend running?');
     } finally {
       setIsLoading(false);
     }

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   LayoutDashboard, 
   CreditCard, 
@@ -27,7 +28,9 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
-import { mockUsers } from '@/lib/mockData';
+import { useQuery } from '@tanstack/react-query';
+// UPDATED IMPORT
+import { fetchAllUsersPublic } from '@/services/users'; 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface LayoutProps {
@@ -46,6 +49,13 @@ const Layout = ({ children }: LayoutProps) => {
   const [isEnglishVersion, setIsEnglishVersion] = useState(false);
   const [isReading, setIsReading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // UPDATED: Fetch ALL users from the public endpoint for Terms List
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsersPublic'],
+    queryFn: fetchAllUsersPublic,
+    enabled: !!currentUser,
+  });
 
   // Handle responsive behavior
   useEffect(() => {
@@ -409,8 +419,8 @@ const Layout = ({ children }: LayoutProps) => {
   };
 
   // Get responsible members and regular members from actual user data
-  const responsibleMembers = mockUsers.filter(user => user.role === 'responsible_member');
-  const regularMembers = mockUsers.filter(user => user.role === 'member');
+  const responsibleMembers = (allUsers as any[]).filter(user => user.role === 'responsible_member');
+  const regularMembers = (allUsers as any[]).filter(user => user.role === 'member');
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -566,9 +576,12 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-white/80 to-slate-50/80 dark:from-slate-800/80 dark:to-slate-900/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative flex-shrink-0">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs sm:text-sm font-bold shadow-lg">
-                {currentUser.name.charAt(0).toUpperCase()}
-              </div>
+              <Avatar className="h-10 w-10 rounded-2xl border-2 border-blue-100 dark:border-blue-900 shadow-sm">
+                <AvatarImage src={currentUser.profile_photo} alt={currentUser.name} className="object-cover" />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs font-bold rounded-2xl">
+                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                </AvatarFallback>
+              </Avatar>
               <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full border-2 border-white dark:border-slate-800" />
             </div>
             <div className="flex-1 min-w-0">
@@ -971,8 +984,8 @@ const Layout = ({ children }: LayoutProps) => {
                             </div>
                           );
                         })}
-                  </div>
-                </div>
+                      </div>
+                    </div>
 
                     {/* Regular Members */}
                     <div className="space-y-4">
