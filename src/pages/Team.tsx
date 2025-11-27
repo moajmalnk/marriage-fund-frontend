@@ -526,7 +526,7 @@ const Team = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+      {/* <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           {canRequestFunds && (
             <Dialog open={showFundRequestModal} onOpenChange={setShowFundRequestModal}>
               <DialogTrigger asChild>
@@ -557,7 +557,7 @@ const Team = () => {
               </DialogTrigger>
             </Dialog>
           )}
-      </div>
+      </div> */}
 
       {/* Team Statistics Cards (6-Grid) */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
