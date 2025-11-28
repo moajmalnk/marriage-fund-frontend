@@ -748,331 +748,263 @@ const Layout = ({ children }: LayoutProps) => {
             </div>
           </DialogHeader>
           
-          <div className="space-y-6 text-sm sm:text-base leading-relaxed">
-            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                {isEnglishVersion ? "Purpose & Scope" : "ആമുഖം (Purpose & Scope)"}
-              </h3>
-              <p className="text-blue-800 dark:text-blue-200">
-                {isEnglishVersion 
-                  ? "This 'Marriage Fund' has been formed to provide financial support to CBMS members for their wedding expenses. All members participating in this fund must strictly adhere to the following rules and regulations."
-                  : "CBMS അംഗങ്ങളുടെ വിവാഹച്ചെലവുകൾക്ക് സാമ്പത്തിക പിന്തുണ നൽകുന്നതിനായി ഈ \"വിവാഹക്കുറി\" രൂപീകരിച്ചിരിക്കുന്നു. ഈ കുറിയിൽ അംഗങ്ങളാകുന്ന എല്ലാവരും താഴെപ്പറയുന്ന നിയമങ്ങളും വ്യവസ്ഥകളും കർശനമായി പാലിക്കേണ്ടതാണ്."
-                }
-              </p>
-            </div>
+         <div className="space-y-6 text-[15px] sm:text-base leading-relaxed px-3 sm:px-6 lg:px-10 max-w-5xl mx-auto">
 
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {isEnglishVersion ? "1. Membership Eligibility" : "1. അംഗത്വം (Membership Eligibility)"}
-                </h4>
-                <p className="text-slate-700 dark:text-slate-300">
-                  {isEnglishVersion
-                    ? "Only permanent members of CBMS are eligible to join this fund. Matters related to inclusion of new members, exclusion, or membership duration shall be decided by CBMS authorized authorities."
-                    : "ഈ കുറിയിൽ അംഗമാകാൻ CBMS യിലെ സ്ഥിരാംഗങ്ങൾക്കു മാത്രമേ അർഹതയുള്ളൂ. പുതിയ അംഗങ്ങളെ ഉൾപ്പെടുത്തൽ, ഒഴിവാക്കൽ, അല്ലെങ്കിൽ അംഗത്വ കാലാവധി സംബന്ധിച്ച കാര്യങ്ങൾ CBMS അംഗീകൃത അധികാരികൾ തീരുമാനിക്കും."
-                  }
-                </p>
-              </div>
+  {/* PURPOSE SECTION */}
+  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 sm:p-6">
+    <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 text-lg sm:text-xl">
+      {isEnglishVersion ? "Purpose & Scope" : "ആമുഖം (Purpose & Scope)"}
+    </h3>
 
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {isEnglishVersion ? "2. Fund Contribution" : "2. പണസമാഹരണവും (Fund Contribution)"}
-                </h4>
-                <p className="text-slate-700 dark:text-slate-300">
-                  {isEnglishVersion
-                    ? "Each member must contribute ₹5000 (Five Thousand Rupees) on the occasion of another member's wedding. It is each member's personal responsibility to pay the amount on time."
-                    : "ഓരോ അംഗവും മറ്റൊരു അംഗത്തിന്റെ വിവാഹാവസരത്തിൽ ₹5000 (അയ്യായിരം രൂപ) വീതം അടയ്ക്കേണ്ടതാണ്. പണം കൃത്യമായി സമയത്ത് അടയ്ക്കേണ്ടത് ഓരോ അംഗത്തിന്റെയും വ്യക്തിപരമായ ഉത്തരവാദിത്വമാണ്."
-                  }
-                </p>
-              </div>
+    <p className="text-blue-800 dark:text-blue-200 text-sm sm:text-base">
+      {isEnglishVersion 
+        ? "This 'Marriage Fund' has been formed to provide financial support to CBMS members for their wedding expenses. All members participating in this fund must strictly adhere to the following rules and regulations."
+        : "CBMS അംഗങ്ങളുടെ വിവാഹച്ചെലവുകൾക്ക് സാമ്പത്തിക പിന്തുണ നൽകുന്നതിനായി ഈ \"വിവാഹക്കുറി\" രൂപീകരിച്ചിരിക്കുന്നു. ഈ കുറിയിൽ അംഗങ്ങളാകുന്ന എല്ലാവരും താഴെപ്പറയുന്ന നിയമങ്ങളും വ്യവസ്ഥകളും കർശനമായി പാലിക്കേണ്ടതാണ്."
+      }
+    </p>
+  </div>
 
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {isEnglishVersion ? "3. Marriage Notification" : "3. വിവാഹ അറിയിപ്പ് (Marriage Notification)"}
-                </h4>
-                <p className="text-slate-700 dark:text-slate-300">
-                  {isEnglishVersion
-                    ? "Members must inform the fund coordinators at least 45 days in advance when their wedding is finalized. The coordinators shall issue official notification to all members 30 days before the wedding for payment collection."
-                    : "കുറിയിൽ അംഗമായിട്ടുള്ളവർ, തങ്ങളുടെ വിവാഹം നിശ്ചയിച്ചാൽ കുറഞ്ഞത് 45 ദിവസ മുമ്പ് കുറിയുടെ ഉത്തരവാദികളോട് വിവരം അറിയിക്കണം. ഉത്തരവാദിത്വമുള്ളവർ എല്ലാ അംഗങ്ങളെയും വിവാഹത്തിന് 30 ദിവസങ്ങൾക്ക് മുമ്പ് പണമടക്കാനുള്ള ഔദ്യോഗിക അറിയിപ്പ് നൽകേണ്ടതാണ്."
-                  }
-                </p>
-              </div>
+  {/* RULE SECTIONS */}
+  <div className="space-y-6">
 
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {isEnglishVersion ? "4. Payment Schedule" : "4. പണം അടയ്ക്കൽ സമയക്രമം (Payment Schedule)"}
-                </h4>
-                <p className="text-slate-700 dark:text-slate-300">
-                  {isEnglishVersion
-                    ? "All members must submit their contribution to the responsible persons at least one week before the wedding. Those who receive the fund (married members) are obligated to contribute the specified amount for subsequent weddings."
-                    : "എല്ലാ അംഗങ്ങളും വിവാഹത്തിന് ഒരാഴ്ച മുമ്പ് തന്നെ പണം ഉത്തരവാദികളായ വ്യക്തികൾക്ക് കൈമാറിക്കഴിഞ്ഞിരിക്കണം. പണം കൈപ്പറ്റിയവരും (വിവാഹിതരും) തങ്ങളുടെ കടമയായി നിശ്ചിത തുക പിന്നീട് അടയ്ക്കേണ്ടതാണ്."
-                  }
-                </p>
-              </div>
+    {/* List of sections */}
+    {[
+      {
+        titleE: "1. Membership Eligibility",
+        titleM: "1. അംഗത്വം (Membership Eligibility)",
+        descE: "Only permanent members of CBMS are eligible to join this fund. Matters related to new member inclusion, exclusion or membership duration shall be decided by authorized CBMS authorities.",
+        descM: "ഈ കുറിയിൽ അംഗമാകാൻ CBMS യിലെ സ്ഥിരാംഗങ്ങൾക്കു മാത്രമേ അർഹതയുള്ളൂ. പുതിയ അംഗങ്ങളെ ഉൾപ്പെടുത്തൽ, ഒഴിവാക്കൽ, അല്ലെങ്കിൽ അംഗത്വ കാലാവധി സംബന്ധിച്ച കാര്യങ്ങൾ അധികാരികൾ തീരുമാനിക്കും."
+      },
+      {
+        titleE: "2. Fund Contribution",
+        titleM: "2. പണസമാഹരണവും (Fund Contribution)",
+        descE: "Each member must contribute ₹5000 on the occasion of another member's wedding. It is each member’s responsibility to pay on time.",
+        descM: "ഓരോ അംഗവും മറ്റൊരു അംഗത്തിന്റെ വിവാഹത്തിന് ₹5000 വീതം അടയ്ക്കേണ്ടതാണ്. പണം സമയത്ത് അടയ്ക്കേണ്ടത് ഓരോരുത്തരുടെയും ഉത്തരവാദിത്വമാണ്."
+      },
+      {
+        titleE: "3. Marriage Notification",
+        titleM: "3. വിവാഹ അറിയിപ്പ്",
+        descE: "Members must inform fund coordinators at least 45 days before their wedding. Official notification to all members will be issued 30 days before the wedding.",
+        descM: "അംഗങ്ങൾ 45 ദിവസം മുമ്പ് വിവാഹ വിവരം അറിയിക്കണം. 30 ദിവസം മുമ്പ് ഔദ്യോഗിക അറിയിപ്പ് നൽകും."
+      },
+      {
+        titleE: "4. Payment Schedule",
+        titleM: "4. പണം അടയ്ക്കൽ സമയക്രമം",
+        descE: "Members must pay the amount at least one week before the wedding. The married member must contribute for future weddings as well.",
+        descM: "വിവാഹത്തിന് ഒരാഴ്ച മുമ്പ് പണം അടയ്ക്കണം. പണം കൈപ്പറ്റിയവരും പിന്നീട് അടയ്ക്കണം."
+      },
+      {
+        titleE: "5. Disbursement of Fund",
+        titleM: "5. പണം കൈമാറ്റം",
+        descE: "Collected amount will be given before or on the wedding day. For emergency needs, members must notify at least two months earlier.",
+        descM: "പിരിച്ചെടുത്ത തുക വിവാഹത്തിന് മുൻപോ വിവാഹദിവസമോ നൽകി തീർക്കും. അടിയന്തരാവശ്യങ്ങൾക്കായി രണ്ടുമാസം മുമ്പ് അറിയിക്കണം."
+      },
+      {
+        titleE: "6. Duration of the Fund",
+        titleM: "6. കുറിയുടെ നിലനിൽപ്പ്",
+        descE: "The fund ends once all members' weddings are completed. Members cannot leave the fund after joining.",
+        descM: "എല്ലാവരുടെയും വിവാഹം കഴിഞ്ഞാൽ കുറി അവസാനിക്കും. ഒരിക്കൽ ചേർന്നാൽ പിൻമാറാൻ പാടില്ല."
+      },
+      {
+        titleE: "7. Delayed Payment Clause",
+        titleM: "7. വൈകിയ പണമടവ്",
+        descE: "Late or partial payments will be recorded as debt and must be cleared within one month.",
+        descM: "വൈകിയോ ഭാഗികമായോ അടച്ചാൽ കടമായി രേഖപ്പെടുത്തി ഒരു മാസത്തിനകം തീർപ്പാക്കണം."
+      },
+      {
+        titleE: "8. Special Cases",
+        titleM: "8. പ്രത്യേക സാഹചര്യങ്ങൾ",
+        descE: "If the wedding is postponed or cancelled, earlier payments remain valid. Legal measures may be taken for non-payment.",
+        descM: "വിവാഹം മാറ്റുകയോ റദ്ദാക്കുകയോ ചെയ്താൽ പണം അടുത്ത അവസരത്തിൽ നിലനിൽക്കും. പണം അടക്കാത്തവർക്ക് നടപടി സ്വീകരിക്കാം."
+      },
+      {
+        titleE: "9. Fund Management & Transparency",
+        titleM: "9. ഫണ്ട് നിയന്ത്രണം & സുതാര്യത",
+        descE: "Record keeping must be done via register or Google Sheet. Minimum two responsible persons must manage the fund.",
+        descM: "റജിസ്റ്റർ/Google Sheet നിർബന്ധമാണ്. കുറഞ്ഞത് രണ്ട് പേർ ഫണ്ട് കൈകാര്യം ചെയ്യും."
+      },
+      {
+        titleE: "10. Suggestions & Feedback",
+        titleM: "10. അഭിപ്രായങ്ങളും നിർദ്ദേശങ്ങളും",
+        descE: "Suggestions can be submitted to any coordinator.",
+        descM: "ഏതെങ്കിലും അഭിപ്രായം/നിർദ്ദേശം ഉത്തരവാദികളിൽ ആരോടും പറയാവുന്നതാണ്."
+      },
+      {
+        titleE: "11. Closure & Remaining Funds",
+        titleM: "11. അവസാന ഘട്ടം",
+        descE: "Any remaining amount after the final marriage will be used as decided in the general meeting.",
+        descM: "അവസാനം ബാക്കി വരുന്ന തുക പൊതുയോഗത്തിൽ തീരുമാനിച്ച പ്രകാരം വിനിയോഗിക്കും."
+      }
+    ].map((sec, i) => (
+      <div key={i} className="space-y-2">
+        <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-base sm:text-lg">
+          {isEnglishVersion ? sec.titleE : sec.titleM}
+        </h4>
 
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {isEnglishVersion ? "5. Disbursement of Fund" : "5. പണം കൈമാറ്റം (Disbursement of Fund)"}
-                </h4>
-                <p className="text-slate-700 dark:text-slate-300">
-                  {isEnglishVersion
-                    ? "The collected amount shall be disbursed to the concerned member on the day before or on the wedding day. In emergency situations (e.g., urgent expenses), if funds are needed earlier, the coordinators must be informed at least two months in advance."
-                    : "പിരിച്ചെടുത്ത തുക വിവാഹത്തിൻ്റെ മുൻദിവസമോ വിവാഹദിനത്തെയോ ആയിരിക്കും ബന്ധപ്പെട്ട അംഗത്തിന് കൈമാറുക. അത്യാവശ്യ സാഹചര്യങ്ങളിൽ (ഉദാഹരണം: അടിയന്തര ചെലവ്) പണം ആവശ്യമായാൽ, അതിനു കുറഞ്ഞത് രണ്ട് മാസം മുമ്പ് ഉത്തരവാദിത്വമുള്ളവരെ വിവരം അറിയിക്കണം."
-                  }
-                </p>
-              </div>
+        <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base">
+          {isEnglishVersion ? sec.descE : sec.descM}
+        </p>
+      </div>
+    ))}
 
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {isEnglishVersion ? "6. Duration of the Fund" : "6. കുറിയുടെ നിലനിൽപ്പ് (Duration of the Fund)"}
-                </h4>
-                <p className="text-slate-700 dark:text-slate-300">
-                  {isEnglishVersion
-                    ? "This fund will naturally conclude once all members' weddings are completed. A member shall not withdraw from the fund after joining."
-                    : "ഈ കുറി അതിലെ എല്ലാ അംഗങ്ങളുടെയും വിവാഹങ്ങൾ കഴിഞ്ഞാൽ സ്വാഭാവികമായി അവസാനിക്കുന്നതാണ്. ഒരു വ്യക്തി അംഗത്വം ആരംഭിച്ചതിനുശേഷം പിൻമാറാൻ പാടില്ല."
-                  }
-                </p>
-              </div>
+    {/* ================== OFFICIAL DOCUMENT BOX ================== */}
+    <div className="relative bg-white dark:bg-slate-900 border-4 border-double border-amber-700/30 dark:border-amber-600/30 rounded-md shadow-xl overflow-hidden">
 
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {isEnglishVersion ? "7. Delayed Payment Clause" : "7. വൈകിയ പണമടവ് (Delayed Payment Clause)"}
-                </h4>
-                <p className="text-slate-700 dark:text-slate-300">
-                  {isEnglishVersion
-                    ? "For those unable to pay on time (fully or partially), the amount will be recorded as debt in their name. The outstanding amount must be settled within one month."
-                    : "നിശ്ചിത സമയത്ത് പണമടക്കാൻ സാധിക്കാത്തവർക്ക് (മുഴുവനായോ ഭാഗികമായോ) ആ തുക അവരുടെ പേരിൽ കടമായി രേഖപ്പെടുത്തും. അവശേഷിക്കുന്ന തുക ഒരു മാസത്തിനകം തീർപ്പാക്കേണ്ടതാണ്."
-                  }
-                </p>
-              </div>
+      {/* Corners */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-12 h-12 border-l-4 border-t-4 border-amber-700/40 dark:border-amber-600/40"></div>
+        <div className="absolute top-0 right-0 w-12 h-12 border-r-4 border-t-4 border-amber-700/40 dark:border-amber-600/40"></div>
+        <div className="absolute bottom-0 left-0 w-12 h-12 border-l-4 border-b-4 border-amber-700/40 dark:border-amber-600/40"></div>
+        <div className="absolute bottom-0 right-0 w-12 h-12 border-r-4 border-b-4 border-amber-700/40 dark:border-amber-600/40"></div>
+      </div>
 
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {isEnglishVersion ? "8. Special Cases" : "8. പ്രത്യേക സാഹചര്യങ്ങൾ (Special Cases)"}
-                </h4>
-                <p className="text-slate-700 dark:text-slate-300">
-                  {isEnglishVersion
-                    ? "If a member's wedding is postponed or cancelled, the previously collected amount will remain valid for the next wedding occasion. For non-payment cases, necessary actions/legal measures may be taken as per group decision."
-                    : "ഒരു അംഗത്തിന്റെ വിവാഹം മാറ്റിയാൽ അല്ലെങ്കിൽ റദ്ദായാൽ, മുൻപ് അടച്ച തുക അടുത്ത വിവാഹാവസരത്തിൽ നിലനിൽക്കും. പണം അടക്കാത്തവർക്ക്, ഗ്രൂപ്പിൻ്റെ തീരുമാനപ്രകാരം ആവശ്യമായ നടപടികൾ / നിയമനടപടി സ്വീകരിക്കാം."
-                  }
-                </p>
-              </div>
+      <div className="relative p-6 sm:p-10">
 
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {isEnglishVersion ? "9. Fund Management & Transparency" : "9. ഫണ്ട് നിയന്ത്രണം & സുതാര്യത (Fund Management & Transparency)"}
-                </h4>
-                <p className="text-slate-700 dark:text-slate-300">
-                  {isEnglishVersion
-                    ? "A Register / Google Sheet / Account Book must be used to record collected and disbursed amounts. Fund management shall be handled by at least two responsible persons. Receipts / Digital records must be provided for all transactions."
-                    : "പിരിച്ചെടുക്കുന്ന തുകയും കൈമാറുന്ന തുകയും രേഖപ്പെടുത്താൻ റജിസ്റ്റർ / Google Sheet / അക്കൗണ്ട് ബുക്ക് നിർബന്ധമായും ഉപയോഗിക്കണം. പണം കൈകാര്യം ചെയ്യുക കുറഞ്ഞത് രണ്ട് ഉത്തരവാദികളായ വ്യക്തികളാണ് ചെയ്യേണ്ടത്. എല്ലാ ഇടപാടുകൾക്കും രസീത് / ഡിജിറ്റൽ രേഖ നൽകേണ്ടതാണ്."
-                  }
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {isEnglishVersion ? "10. Suggestions & Feedback" : "10. അഭിപ്രായങ്ങളും നിർദ്ദേശങ്ങളും (Suggestions & Feedback)"}
-                </h4>
-                <p className="text-slate-700 dark:text-slate-300">
-                  {isEnglishVersion
-                    ? "Any opinions or suggestions related to the fund can be directly shared with any of the coordinators."
-                    : "കുറിയുമായി ബന്ധപ്പെട്ട ഏതു വിധത്തിലുള്ള അഭിപ്രായങ്ങളോ നിർദ്ദേശങ്ങളോ ഉത്തരവാദികളിൽ ആരോടും നേരിട്ട് പങ്കുവെക്കാവുന്നതാണ്."
-                  }
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  {isEnglishVersion ? "11. Closure & Remaining Funds" : "11. അവസാന ഘട്ടം (Closure & Remaining Funds)"}
-                </h4>
-                <p className="text-slate-700 dark:text-slate-300">
-                  {isEnglishVersion
-                    ? "The fund will conclude once all members' weddings are completed. If there are any remaining funds at the final stage, they may be utilized as per the decision taken in the general meeting."
-                    : "എല്ലാ അംഗങ്ങളുടെയും വിവാഹം കഴിഞ്ഞാൽ കുറി അവസാനിക്കും. അവസാന ഘട്ടത്തിൽ ബാക്കിയുള്ള തുക ഉണ്ടെങ്കിൽ അത് പൊതുയോഗത്തിൽ എടുത്ത തീരുമാനം അനുസരിച്ച് വിനിയോഗിക്കാവുന്നതാണ്."
-                  }
-                </p>
-              </div>
-
-              {/* Official Document Style */}
-              <div className="relative bg-white dark:bg-slate-900 border-4 border-double border-amber-700/30 dark:border-amber-600/30 rounded-none shadow-2xl overflow-hidden">
-                {/* Decorative corners */}
-                <div className="absolute top-0 left-0 w-16 h-16 border-l-4 border-t-4 border-amber-700/40 dark:border-amber-600/40"></div>
-                <div className="absolute top-0 right-0 w-16 h-16 border-r-4 border-t-4 border-amber-700/40 dark:border-amber-600/40"></div>
-                <div className="absolute bottom-0 left-0 w-16 h-16 border-l-4 border-b-4 border-amber-700/40 dark:border-amber-600/40"></div>
-                <div className="absolute bottom-0 right-0 w-16 h-16 border-r-4 border-b-4 border-amber-700/40 dark:border-amber-600/40"></div>
-                
-                <div className="relative p-8 sm:p-10">
-                  {/* Official Seal */}
-                  <div className="flex items-center justify-center mb-6">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-amber-700 rounded-full blur-md opacity-20"></div>
-                      <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 dark:from-amber-500 dark:to-amber-700 flex items-center justify-center border-4 border-amber-300 dark:border-amber-400 shadow-lg">
-                        <FileCheck className="h-10 w-10 text-white" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Header */}
-                  <div className="text-center mb-8 space-y-2">
-                    <h4 className="text-2xl font-serif font-bold text-slate-900 dark:text-slate-100 tracking-wide">
-                      {isEnglishVersion ? "Acknowledgement & Signatures" : "അംഗീകാരം"}
-                    </h4>
-                    <p className="text-sm font-semibold text-amber-700 dark:text-amber-500 uppercase tracking-widest">
-                      {isEnglishVersion ? "Section 12" : "Acknowledgement & Signatures"}
-                    </p>
-                    <div className="flex items-center justify-center gap-2 mt-4">
-                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/40 to-transparent"></div>
-                      <div className="w-2 h-2 rounded-full bg-amber-700/40"></div>
-                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/40 to-transparent"></div>
-                    </div>
-                  </div>
-
-                  {/* Declaration Text */}
-                  <div className="mb-8 text-center max-w-3xl mx-auto">
-                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-base">
-                      {isEnglishVersion
-                        ? "Having read and understood this regulation completely, the following members hereby acknowledge and accept all the terms mentioned herein."
-                        : "ഈ നിയമാവലി പൂർണ്ണമായി വായിച്ചറിഞ്ഞ്, ഇതിലെ എല്ലാ വ്യവസ്ഥകളും അംഗീകരിച്ചുകൊണ്ട് താഴെപ്പറയുന്നവർ ഒപ്പുവെക്കുന്നു."
-                      }
-                    </p>
-                    {!isEnglishVersion && (
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 italic">
-                        "Having read and understood all regulations, the following members hereby acknowledge and accept these terms."
-                      </p>
-                    )}
-                  </div>
-                  
-                  {/* Members Grid */}
-                  <div className="grid gap-8 lg:grid-cols-2 mb-8">
-                    {/* Responsible Members */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 pb-3 border-b-2 border-amber-700/20 dark:border-amber-600/20">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-md">
-                          <Shield className="h-5 w-5 text-white" />
-                        </div>
-                  <div>
-                          <h5 className="font-bold text-slate-900 dark:text-slate-100 text-base">
-                            {isEnglishVersion ? "Responsible Members" : "ഉത്തരവാദിത്വമുള്ളവർ"}
-                          </h5>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
-                            {isEnglishVersion ? "Fund Coordinators" : "Responsible Members"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        {responsibleMembers.map((member, index) => {
-                          const memberStatus = getMemberAcknowledgementStatus(member.id);
-                          const isApproved = memberStatus?.acknowledged === true;
-                          
-                          return (
-                            <div 
-                              key={member.id}
-                              className="group grid grid-cols-[auto_1fr_auto] items-center gap-4 py-3 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                            >
-                              <span className="font-mono text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                                {String(index + 1).padStart(2, '0')}.
-                              </span>
-                              <div className="flex items-center gap-3">
-                                <span className="font-medium text-slate-800 dark:text-slate-200 text-sm">
-                                  {member.name}
-                                </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-slate-300 via-slate-200 to-transparent dark:from-slate-600 dark:via-slate-700 dark:to-transparent"></div>
-                              </div>
-                              {isApproved ? (
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border border-green-300 dark:border-green-700 shadow-sm min-w-[100px] justify-center">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-sm shadow-green-500/50"></div>
-                                  <span className="text-xs font-bold text-green-700 dark:text-green-300 uppercase tracking-wide">
-                                    Approved
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/20 border border-amber-300 dark:border-amber-700 shadow-sm min-w-[100px] justify-center">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></div>
-                                  <span className="text-xs font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide">
-                                    Pending
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Regular Members */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 pb-3 border-b-2 border-amber-700/20 dark:border-amber-600/20">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md">
-                          <Users className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <h5 className="font-bold text-slate-900 dark:text-slate-100 text-base">
-                            {isEnglishVersion ? "Members" : "അംഗങ്ങൾ"}
-                          </h5>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
-                            {isEnglishVersion ? "Fund Participants" : "Members"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        {regularMembers.map((member, index) => {
-                          const memberStatus = getMemberAcknowledgementStatus(member.id);
-                          const isApproved = memberStatus?.acknowledged === true;
-                          
-                          return (
-                            <div 
-                              key={member.id}
-                              className="group grid grid-cols-[auto_1fr_auto] items-center gap-4 py-3 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                            >
-                              <span className="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
-                                {String(index + 1).padStart(2, '0')}.
-                              </span>
-                              <div className="flex items-center gap-3">
-                                <span className="font-medium text-slate-800 dark:text-slate-200 text-sm">
-                                  {member.name}
-                                </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-slate-300 via-slate-200 to-transparent dark:from-slate-600 dark:via-slate-700 dark:to-transparent"></div>
-                              </div>
-                              {isApproved ? (
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border border-green-300 dark:border-green-700 shadow-sm min-w-[100px] justify-center">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-sm shadow-green-500/50"></div>
-                                  <span className="text-xs font-bold text-green-700 dark:text-green-300 uppercase tracking-wide">
-                                    Approved
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/20 border border-amber-300 dark:border-amber-700 shadow-sm min-w-[100px] justify-center">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></div>
-                                  <span className="text-xs font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide">
-                                    Pending
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Official Footer */}
-                  <div className="mt-8 pt-6 border-t-2 border-double border-amber-700/20 dark:border-amber-600/20">
-                    <div className="flex items-center justify-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                      <div className="h-px w-12 bg-amber-700/20"></div>
-                      <span className="font-serif italic text-center px-2">
-                        {isEnglishVersion
-                          ? "This document serves as official acknowledgement of the CBMS Marriage Fund regulations"
-                          : "ഈ രേഖ CBMS വിവാഹ ഫണ്ട് നിയന്ത്രണങ്ങളുടെ ഔദ്യോഗിക അംഗീകാരമായി പ്രവർത്തിക്കുന്നു"
-                        }
-                      </span>
-                      <div className="h-px w-12 bg-amber-700/20"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        {/* SEAL */}
+        <div className="flex items-center justify-center mb-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-amber-700 rounded-full blur-md opacity-20"></div>
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 dark:from-amber-500 dark:to-amber-700 flex items-center justify-center border-4 border-amber-300 dark:border-amber-400 shadow-lg">
+              <FileCheck className="h-10 w-10 sm:h-12 sm:w-12 text-white" />
             </div>
           </div>
+        </div>
+
+        {/* Heading */}
+        <div className="text-center mb-8 space-y-2">
+          <h4 className="text-xl sm:text-2xl font-serif font-bold text-slate-900 dark:text-slate-100">
+            {isEnglishVersion ? "Acknowledgement & Signatures" : "അംഗീകാരം"}
+          </h4>
+          <p className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-500 uppercase tracking-widest">
+            Section 12
+          </p>
+        </div>
+
+        {/* Declaration */}
+        <div className="mb-8 text-center max-w-2xl mx-auto">
+          <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base">
+            {isEnglishVersion
+              ? "Having read and understood this regulation completely..."
+              : "ഈ നിയമാവലി പൂർണ്ണമായി വായിച്ചറിഞ്ഞ്..."
+            }
+          </p>
+        </div>
+
+        {/* MEMBERS GRID */}
+        <div className="grid gap-8 sm:grid-cols-2">
+
+          {/* RESPONSIBLE MEMBERS */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 pb-3 border-b border-amber-700/20 dark:border-amber-600/20">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-md">
+                <Shield className="h-5 w-5 text-white" />
+              </div>
+              <h5 className="font-bold text-slate-900 dark:text-slate-100 text-base">
+                {isEnglishVersion ? "Responsible Members" : "ഉത്തരവാദികൾ"}
+              </h5>
+            </div>
+
+            <div className="space-y-2">
+              {responsibleMembers.map((member, i) => {
+                const st = getMemberAcknowledgementStatus(member.id);
+                const approved = st?.acknowledged;
+
+                return (
+                  <div 
+                    key={i}
+                    className="group grid grid-cols-[auto_1fr_auto] items-center gap-4 py-3 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
+                  >
+                    <span className="font-mono text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                      {String(i + 1).padStart(2, '0')}.
+                    </span>
+
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-slate-800 dark:text-slate-200 text-sm">
+                        {member.name}
+                      </span>
+                      <div className="h-px flex-1 bg-gradient-to-r from-slate-300 dark:from-slate-600"></div>
+                    </div>
+
+                    {approved ? (
+                      <div className="px-3 py-1.5 rounded-md bg-green-100 dark:bg-green-800/20 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 text-xs font-bold uppercase tracking-wide min-w-[90px] text-center">
+                        Approved
+                      </div>
+                    ) : (
+                      <div className="px-3 py-1.5 rounded-md bg-amber-100 dark:bg-amber-800/20 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wide min-w-[90px] text-center">
+                        Pending
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* REGULAR MEMBERS */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 pb-3 border-b border-amber-700/20 dark:border-amber-600/20">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              <h5 className="font-bold text-slate-900 dark:text-slate-100 text-base">
+                {isEnglishVersion ? "Members" : "അംഗങ്ങൾ"}
+              </h5>
+            </div>
+
+            <div className="space-y-2">
+              {regularMembers.map((member, i) => {
+                const st = getMemberAcknowledgementStatus(member.id);
+                const approved = st?.acknowledged;
+
+                return (
+                  <div 
+                    key={i}
+                    className="group grid grid-cols-[auto_1fr_auto] items-center gap-4 py-3 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
+                  >
+                    <span className="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
+                      {String(i + 1).padStart(2, '0')}.
+                    </span>
+
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-slate-800 dark:text-slate-200 text-sm">
+                        {member.name}
+                      </span>
+                      <div className="h-px flex-1 bg-gradient-to-r from-slate-300 dark:from-slate-600"></div>
+                    </div>
+
+                    {approved ? (
+                      <div className="px-3 py-1.5 rounded-md bg-green-100 dark:bg-green-800/20 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 text-xs font-bold uppercase tracking-wide min-w-[90px] text-center">
+                        Approved
+                      </div>
+                    ) : (
+                      <div className="px-3 py-1.5 rounded-md bg-amber-100 dark:bg-amber-800/20 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wide min-w-[90px] text-center">
+                        Pending
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
+
+        {/* FOOTER */}
+        <div className="mt-8 pt-6 border-t border-amber-700/20 dark:border-amber-600/20 text-center">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 italic">
+            {isEnglishVersion
+              ? "This document serves as the official acknowledgment of CBMS Marriage Fund regulations."
+              : "ഈ രേഖ CBMS വിവാഹ ഫണ്ട് നിയന്ത്രണങ്ങളുടെ ഔദ്യോഗിക അംഗീകാരമാണ്."
+            }
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
 
           {hasAcknowledgedTerms && getAcknowledgementData() && (
             <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
