@@ -725,20 +725,22 @@ const Layout = ({ children }: LayoutProps) => {
 
       {/* Terms of Use Dialog */}
       <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
-        <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl mx-2 sm:mx-4 h-[90vh] sm:h-auto max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
-          <DialogHeader className="pb-4">
-            <div className="flex items-start justify-between gap-4">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-4xl mx-2 sm:mx-4 h-[90vh] sm:h-auto max-h-[90vh] sm:max-h-[80vh] overflow-y-auto p-0">
+          <DialogHeader className="pb-4 pt-4 sm:pt-6 px-4 sm:px-6">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
               <div className="flex-1">
-                <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl mb-2">
-              <div className="p-2 rounded-lg bg-indigo-500 text-white">
-                <FileCheck className="h-5 w-5" />
+                <DialogTitle className="flex items-center gap-2 text-base sm:text-lg mb-1 sm:mb-2">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-indigo-500 text-white flex-shrink-0">
+                <FileCheck className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
+                  <span className="text-base sm:text-lg">
                   {isEnglishVersion 
                     ? "CBMS Marriage Fund Regulations"
                     : "CBMS വിവാഹക്കുറി നിയമാവലി (Marriage Fund Regulations)"
                   }
+                  </span>
             </DialogTitle>
-            <DialogDescription className="text-sm sm:text-base">
+            <DialogDescription className="text-xs sm:text-sm">
                   {isEnglishVersion
                     ? "Marriage Fund Terms and Conditions - Please read and acknowledge"
                     : "വിവാഹ ഫണ്ട് നിബന്ധനകളും വ്യവസ്ഥകളും - ദയവായി വായിച്ച് അംഗീകരിക്കുക"
@@ -748,15 +750,15 @@ const Layout = ({ children }: LayoutProps) => {
             </div>
           </DialogHeader>
           
-         <div className="space-y-6 text-[15px] sm:text-base leading-relaxed px-3 sm:px-6 lg:px-10 max-w-5xl mx-auto">
+         <div className="space-y-4 sm:space-y-6 text-[14px] sm:text-base leading-relaxed px-3 sm:px-4 md:px-6 lg:px-8 max-w-5xl mx-auto pb-4 sm:pb-6">
 
   {/* PURPOSE SECTION */}
-  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 sm:p-6">
-    <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 text-lg sm:text-xl">
+  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 sm:p-6">
+    <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 text-base sm:text-xl">
       {isEnglishVersion ? "Purpose & Scope" : "ആമുഖം (Purpose & Scope)"}
     </h3>
 
-    <p className="text-blue-800 dark:text-blue-200 text-sm sm:text-base">
+    <p className="text-blue-800 dark:text-blue-200 text-xs sm:text-sm">
       {isEnglishVersion 
         ? "This 'Marriage Fund' has been formed to provide financial support to CBMS members for their wedding expenses. All members participating in this fund must strictly adhere to the following rules and regulations."
         : "CBMS അംഗങ്ങളുടെ വിവാഹച്ചെലവുകൾക്ക് സാമ്പത്തിക പിന്തുണ നൽകുന്നതിനായി ഈ \"വിവാഹക്കുറി\" രൂപീകരിച്ചിരിക്കുന്നു. ഈ കുറിയിൽ അംഗങ്ങളാകുന്ന എല്ലാവരും താഴെപ്പറയുന്ന നിയമങ്ങളും വ്യവസ്ഥകളും കർശനമായി പാലിക്കേണ്ടതാണ്."
@@ -837,11 +839,11 @@ const Layout = ({ children }: LayoutProps) => {
       }
     ].map((sec, i) => (
       <div key={i} className="space-y-2">
-        <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-base sm:text-lg">
+        <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
           {isEnglishVersion ? sec.titleE : sec.titleM}
         </h4>
 
-        <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base">
+        <p className="text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
           {isEnglishVersion ? sec.descE : sec.descM}
         </p>
       </div>
@@ -858,31 +860,31 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="absolute bottom-0 right-0 w-12 h-12 border-r-4 border-b-4 border-amber-700/40 dark:border-amber-600/40"></div>
       </div>
 
-      <div className="relative p-6 sm:p-10">
+      <div className="relative p-4 sm:p-6 md:p-8 lg:p-10">
 
         {/* SEAL */}
-        <div className="flex items-center justify-center mb-6">
+        <div className="flex items-center justify-center mb-4 sm:mb-6">
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-amber-700 rounded-full blur-md opacity-20"></div>
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 dark:from-amber-500 dark:to-amber-700 flex items-center justify-center border-4 border-amber-300 dark:border-amber-400 shadow-lg">
-              <FileCheck className="h-10 w-10 sm:h-12 sm:w-12 text-white" />
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 dark:from-amber-500 dark:to-amber-700 flex items-center justify-center border-4 border-amber-300 dark:border-amber-400 shadow-lg">
+              <FileCheck className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-white" />
             </div>
           </div>
         </div>
 
         {/* Heading */}
-        <div className="text-center mb-8 space-y-2">
-          <h4 className="text-xl sm:text-2xl font-serif font-bold text-slate-900 dark:text-slate-100">
+        <div className="text-center mb-6 sm:mb-8 space-y-1 sm:space-y-2">
+          <h4 className="text-lg sm:text-xl md:text-2xl font-serif font-bold text-slate-900 dark:text-slate-100">
             {isEnglishVersion ? "Acknowledgement & Signatures" : "അംഗീകാരം"}
           </h4>
-          <p className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-500 uppercase tracking-widest">
+          <p className="text-[10px] sm:text-xs font-semibold text-amber-700 dark:text-amber-500 uppercase tracking-widest">
             Section 12
           </p>
         </div>
 
         {/* Declaration */}
-        <div className="mb-8 text-center max-w-2xl mx-auto">
-          <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base">
+        <div className="mb-6 sm:mb-8 text-center max-w-2xl mx-auto">
+          <p className="text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
             {isEnglishVersion
               ? "Having read and understood this regulation completely..."
               : "ഈ നിയമാവലി പൂർണ്ണമായി വായിച്ചറിഞ്ഞ്..."
@@ -891,15 +893,15 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
 
         {/* MEMBERS GRID */}
-        <div className="grid gap-8 sm:grid-cols-2">
+        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2">
 
           {/* RESPONSIBLE MEMBERS */}
           <div className="space-y-4">
             <div className="flex items-center gap-3 pb-3 border-b border-amber-700/20 dark:border-amber-600/20">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-md">
-                <Shield className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-md flex-shrink-0">
+                <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
-              <h5 className="font-bold text-slate-900 dark:text-slate-100 text-base">
+              <h5 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
                 {isEnglishVersion ? "Responsible Members" : "ഉത്തരവാദികൾ"}
               </h5>
             </div>
@@ -912,25 +914,24 @@ const Layout = ({ children }: LayoutProps) => {
                 return (
                   <div 
                     key={i}
-                    className="group grid grid-cols-[auto_1fr_auto] items-center gap-4 py-3 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
+                    className="group flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
                   >
-                    <span className="font-mono text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                    <span className="font-mono text-xs sm:text-sm font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                       {String(i + 1).padStart(2, '0')}.
                     </span>
 
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-slate-800 dark:text-slate-200 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-slate-800 dark:text-slate-200 text-xs sm:text-sm truncate block">
                         {member.name}
                       </span>
-                      <div className="h-px flex-1 bg-gradient-to-r from-slate-300 dark:from-slate-600"></div>
                     </div>
 
                     {approved ? (
-                      <div className="px-3 py-1.5 rounded-md bg-green-100 dark:bg-green-800/20 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 text-xs font-bold uppercase tracking-wide min-w-[90px] text-center">
+                      <div className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-md bg-green-100 dark:bg-green-800/20 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 text-xs font-bold uppercase tracking-wide text-center flex-shrink-0">
                         Approved
                       </div>
                     ) : (
-                      <div className="px-3 py-1.5 rounded-md bg-amber-100 dark:bg-amber-800/20 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wide min-w-[90px] text-center">
+                      <div className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-md bg-amber-100 dark:bg-amber-800/20 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wide text-center flex-shrink-0">
                         Pending
                       </div>
                     )}
@@ -943,10 +944,10 @@ const Layout = ({ children }: LayoutProps) => {
           {/* REGULAR MEMBERS */}
           <div className="space-y-4">
             <div className="flex items-center gap-3 pb-3 border-b border-amber-700/20 dark:border-amber-600/20">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md">
-                <Users className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md flex-shrink-0">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
-              <h5 className="font-bold text-slate-900 dark:text-slate-100 text-base">
+              <h5 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
                 {isEnglishVersion ? "Members" : "അംഗങ്ങൾ"}
               </h5>
             </div>
@@ -959,25 +960,24 @@ const Layout = ({ children }: LayoutProps) => {
                 return (
                   <div 
                     key={i}
-                    className="group grid grid-cols-[auto_1fr_auto] items-center gap-4 py-3 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
+                    className="group flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
                   >
-                    <span className="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
+                    <span className="font-mono text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400 flex-shrink-0">
                       {String(i + 1).padStart(2, '0')}.
                     </span>
 
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-slate-800 dark:text-slate-200 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-slate-800 dark:text-slate-200 text-xs sm:text-sm truncate block">
                         {member.name}
                       </span>
-                      <div className="h-px flex-1 bg-gradient-to-r from-slate-300 dark:from-slate-600"></div>
                     </div>
 
                     {approved ? (
-                      <div className="px-3 py-1.5 rounded-md bg-green-100 dark:bg-green-800/20 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 text-xs font-bold uppercase tracking-wide min-w-[90px] text-center">
+                      <div className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-md bg-green-100 dark:bg-green-800/20 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 text-xs font-bold uppercase tracking-wide text-center flex-shrink-0">
                         Approved
                       </div>
                     ) : (
-                      <div className="px-3 py-1.5 rounded-md bg-amber-100 dark:bg-amber-800/20 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wide min-w-[90px] text-center">
+                      <div className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-md bg-amber-100 dark:bg-amber-800/20 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wide text-center flex-shrink-0">
                         Pending
                       </div>
                     )}
@@ -990,8 +990,8 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
 
         {/* FOOTER */}
-        <div className="mt-8 pt-6 border-t border-amber-700/20 dark:border-amber-600/20 text-center">
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 italic">
+        <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-amber-700/20 dark:border-amber-600/20 text-center">
+          <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 italic">
             {isEnglishVersion
               ? "This document serves as the official acknowledgment of CBMS Marriage Fund regulations."
               : "ഈ രേഖ CBMS വിവാഹ ഫണ്ട് നിയന്ത്രണങ്ങളുടെ ഔദ്യോഗിക അംഗീകാരമാണ്."
@@ -1030,20 +1030,21 @@ const Layout = ({ children }: LayoutProps) => {
           )}
 
           <DialogFooter className="pt-4 border-t border-slate-200 dark:border-slate-700">
-            <div className="flex items-center justify-center gap-3 w-full">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 w-full">
             <Button
               variant="outline"
               onClick={() => setShowTermsDialog(false)}
-              className="px-4 sm:px-6 py-2"
+              className="w-full sm:w-auto px-4 sm:px-6 py-2"
             >
               Close
             </Button>
+            <div className="flex gap-2 w-full sm:w-auto">
              <Button
                 onClick={handleVoiceClick}
                 variant="outline"
                 size="sm"
                 className={cn(
-                  "rounded-lg transition-all duration-200 hover:scale-105 gap-2",
+                  "flex-1 sm:flex-none rounded-lg transition-all duration-200 hover:scale-105 gap-2",
                   isReading 
                     ? "bg-blue-100 dark:bg-blue-900/30 border-blue-500 dark:border-blue-600 hover:bg-blue-200 dark:hover:bg-blue-800/40" 
                     : "hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -1064,7 +1065,7 @@ const Layout = ({ children }: LayoutProps) => {
                 onClick={handleTranslationToggle}
                 variant="outline"
                 size="sm"
-                className="rounded-lg transition-all duration-200 hover:scale-105 hover:bg-slate-100 dark:hover:bg-slate-800 gap-2"
+                className="flex-1 sm:flex-none rounded-lg transition-all duration-200 hover:scale-105 hover:bg-slate-100 dark:hover:bg-slate-800 gap-2"
                 title={isEnglishVersion ? "Switch to Malayalam" : "Switch to English"}
               >
                 <Languages className="h-4 w-4" />
@@ -1072,11 +1073,12 @@ const Layout = ({ children }: LayoutProps) => {
                   {isEnglishVersion ? "മലയാളം" : "English"}
                 </span>
               </Button>
-              
+            </div>
+            
             {!hasAcknowledgedTerms && (
               <Button
                   onClick={handleAcknowledgeClick}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 sm:px-6 py-2"
+                className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 sm:px-6 py-2 mt-2 sm:mt-0"
               >
                 <FileCheck className="h-4 w-4 mr-2" />
                 I Acknowledge & Accept
