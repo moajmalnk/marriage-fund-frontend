@@ -39,3 +39,14 @@ export const createWalletWithdrawal = async (data: {
   });
   return response.data;
 };
+
+export const approveWalletTransaction = async (id: string) => {
+  const response = await api.post(`/wallet-transactions/${id}/approve/`);
+  return response.data;
+};
+
+// Reject a deposit
+export const rejectWalletTransaction = async (id: string) => {
+  const response = await api.post(`/wallet-transactions/${id}/reject/`);
+  return response.data;
+};

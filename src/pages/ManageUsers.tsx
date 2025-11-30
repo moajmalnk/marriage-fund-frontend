@@ -6,15 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plus, Edit, Trash2, Users, Phone, Mail, Camera, Lock } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Phone, Mail, Camera, Lock, Search, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUsers, createUser, updateUser, deleteUser } from '@/services/users';
-// 1. Import the Cropper
 import { ImageCropperDialog } from '@/components/ImageCropperDialog';
 
 // Get the API base URL to properly construct media URLs
@@ -24,7 +23,6 @@ const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
 // Function to fix profile photo URLs
 const fixProfilePhotoUrl = (photoUrl: string) => {
   if (photoUrl && photoUrl.startsWith('/media/')) {
-    // Prepend the backend base URL to make it a full URL
     return `${BACKEND_BASE_URL}${photoUrl}`;
   }
   return photoUrl;
@@ -41,7 +39,10 @@ const ManageUsers = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
   
-  // --- CROPPER STATE (NEW) ---
+  // [NEW] Search State
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // --- CROPPER STATE ---
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
 
@@ -65,6 +66,17 @@ const ManageUsers = () => {
   const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
+  });
+
+  // [NEW] Filter Users Logic
+  const filteredUsers = users.filter((user: any) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      (user.name?.toLowerCase() || '').includes(query) ||
+      (user.username?.toLowerCase() || '').includes(query) ||
+      (user.email?.toLowerCase() || '').includes(query) ||
+      (user.phone || '').includes(query)
+    );
   });
 
   const responsibleMembers = users.filter((u: any) => u.role === 'responsible_member');
@@ -147,6 +159,11 @@ const ManageUsers = () => {
       data.append('responsible_member', formData.responsible_member);
     }
 
+    // Always append password if provided (for both Create AND Update)
+    if (formData.password) {
+      data.append('password', formData.password);
+    }
+
     if (photoFile) {
       data.append('profile_photo', photoFile);
     }
@@ -158,28 +175,23 @@ const ManageUsers = () => {
         toast({ title: "Error", description: "Password is required", variant: "destructive" });
         return;
       }
-      data.append('password', formData.password);
       createMutation.mutate(data);
     }
   };
 
-  // 1. Handle File Selection -> Open Cropper
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         setTempImageSrc(e.target?.result as string);
-        setIsCropperOpen(true); // Open Cropper Modal
+        setIsCropperOpen(true); 
       };
       reader.readAsDataURL(file);
-      
-      // Reset value to allow re-selecting the same file
       event.target.value = '';
     }
   };
 
-  // 2. Handle Crop Completion -> Set Form Data
   const handleCropComplete = (croppedFile: File, previewUrl: string) => {
     setPhotoFile(croppedFile);
     setFormData(prev => ({ ...prev, profile_photo: previewUrl }));
@@ -199,7 +211,7 @@ const ManageUsers = () => {
       phone: user.phone || '',
       profile_photo: fixProfilePhotoUrl(user.profile_photo) || '', 
       responsible_member: user.responsible_member || '',
-      assigned_monthly_amount: user.assigned_monthly_amount?.toString() || '120000'
+      assigned_monthly_amount: user.assigned_monthly_amount?.toString() || '0'
     });
     setIsDialogOpen(true);
   };
@@ -228,193 +240,214 @@ const ManageUsers = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Manage Users</h1>
           <p className="text-sm sm:text-base text-muted-foreground">Create, edit, and manage all users</p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
-              <Plus className="mr-2 h-4 w-4" />
-              Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[500px] mx-2 sm:mx-4 h-[90vh] sm:h-auto max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
-            <DialogHeader className="pb-3 sm:pb-6">
-              <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500 text-white">
-                  <Users className="h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
-                {editingUserId ? 'Edit User' : 'Create New User'}
-              </DialogTitle>
-              <DialogDescription className="text-sm sm:text-base">
-                {editingUserId ? 'Update user information and settings' : 'Add a new user to the system with appropriate role and permissions'}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          {/* [NEW] Search Input */}
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search users..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9 h-10 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white w-full sm:w-auto">
+                <Plus className="mr-2 h-4 w-4" />
+                Add User
+              </Button>
+            </DialogTrigger>
+            
+            {/* Add/Edit User Form */}
+            <DialogContent className="w-[95vw] max-w-[95vw] sm:w-auto sm:max-w-[500px] mx-2 sm:mx-4 max-h-[85vh] overflow-y-auto">
+              <DialogHeader className="pb-3 sm:pb-6">
+                <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500 text-white">
+                    <Users className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  {editingUserId ? 'Edit User' : 'Create New User'}
+                </DialogTitle>
+                <DialogDescription className="text-sm sm:text-base">
+                  {editingUserId ? 'Update user information and settings' : 'Add a new user to the system with appropriate role and permissions'}
+                </DialogDescription>
+              </DialogHeader>
               
-              {/* --- PROFILE PHOTO SECTION (With Overlay + Cropper) --- */}
-              <div className="flex flex-col items-center gap-4 py-4">
-                 <div className="relative inline-block">
-                  <Avatar className="h-24 w-24 border-2 border-slate-200 dark:border-slate-700">
-                    <AvatarImage src={fixProfilePhotoUrl(formData.profile_photo)} alt="Profile" className="object-cover" />
-                    <AvatarFallback className="text-2xl bg-slate-100 dark:bg-slate-800">
-                      {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  {/* Overlay Input for Reliable Clicking */}
-                  <div className="absolute -bottom-2 -right-2 p-2 bg-blue-600 text-white rounded-full shadow-lg z-10 border-2 border-white dark:border-slate-900 cursor-pointer hover:bg-blue-700 transition-colors">
-                    <Camera className="h-4 w-4" />
-                    <input 
-                      type="file" 
-                      accept="image/*"
-                      onChange={handleFileSelect} // Calls handler to open Cropper
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      title="Change Profile Photo"
+              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
+                {/* Profile Photo */}
+                <div className="flex flex-col items-center gap-4 py-4">
+                   <div className="relative inline-block">
+                    <Avatar className="h-24 w-24 border-2 border-slate-200 dark:border-slate-700">
+                      <AvatarImage src={fixProfilePhotoUrl(formData.profile_photo)} alt="Profile" className="object-cover" />
+                      <AvatarFallback className="text-2xl bg-slate-100 dark:bg-slate-800">
+                        {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="absolute -bottom-2 -right-2 p-2 bg-blue-600 text-white rounded-full shadow-lg z-10 border-2 border-white dark:border-slate-900 cursor-pointer hover:bg-blue-700 transition-colors">
+                      <Camera className="h-4 w-4" />
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        title="Change Profile Photo"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Click the camera icon to upload a profile photo</p>
+                </div>
+
+                {/* Form Fields */}
+                <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      className="h-12"
+                      placeholder="Enter username"
+                      required
+                      autoComplete="off"
                     />
                   </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Click the camera icon to upload a profile photo
-                </p>
-              </div>
-              {/* -------------------------------------------------- */}
 
-              <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="h-12"
-                    placeholder="Enter username"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">
-                    {editingUserId ? 'Password (leave blank to keep)' : 'Password'}
-                  </Label>
-                  <div className="relative">
-                      <Input
-                        id="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className="h-12 pl-10"
-                        placeholder={editingUserId ? "New password" : "*******"}
-                        required={!editingUserId}
-                      />
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <div className="space-y-2">
+                    <Label htmlFor="password">
+                      {editingUserId ? 'Password (leave blank to keep)' : 'Password'}
+                    </Label>
+                    <div className="relative">
+                        <Input
+                          id="password"
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          className="h-12 pl-10"
+                          placeholder={editingUserId ? "New password" : "*******"}
+                          required={!editingUserId}
+                          autoComplete="new-password"
+                        />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                   <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="h-12"
-                    placeholder="Enter full name"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="h-12"
-                    placeholder="Enter email address"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="h-12"
-                    placeholder="Enter phone number"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value: string) => setFormData({ ...formData, role: value })}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="responsible_member">Responsible Member</SelectItem>
-                      <SelectItem value="member">Member</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="marital_status">Marital Status</Label>
-                  <Select value={formData.marital_status} onValueChange={(value: string) => setFormData({ ...formData, marital_status: value })}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Married">Married</SelectItem>
-                      <SelectItem value="Unmarried">Unmarried</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {formData.role === 'member' && (
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="responsible">Responsible Member</Label>
-                     <Select value={formData.responsible_member?.toString()} onValueChange={(value) => setFormData({ ...formData, responsible_member: value })}>
+                  <div className="space-y-2">
+                     <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="h-12"
+                      placeholder="Enter full name"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="h-12"
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="h-12"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select value={formData.role} onValueChange={(value: string) => setFormData({ ...formData, role: value })}>
                       <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Select responsible member" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {responsibleMembers.map((member: any) => (
-                          <SelectItem key={member.id} value={member.id.toString()}>
-                            {member.name || member.username}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="responsible_member">Responsible Member</SelectItem>
+                        <SelectItem value="member">Member</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                )}
-              </div>
-              
-              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-200 dark:border-slate-700">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
-                  className="w-full sm:w-auto"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  {createMutation.isPending || updateMutation.isPending ? 'Saving...' : (editingUserId ? 'Update User' : 'Create User')}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* --- CROPPER COMPONENT (Integrated Here) --- */}
+                  <div className="space-y-2">
+                    <Label htmlFor="marital_status">Marital Status</Label>
+                    <Select value={formData.marital_status} onValueChange={(value: string) => setFormData({ ...formData, marital_status: value })}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Married">Married</SelectItem>
+                        <SelectItem value="Unmarried">Unmarried</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {formData.role === 'member' && (
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="responsible">Responsible Member</Label>
+                      <Select value={formData.responsible_member?.toString()} onValueChange={(value) => setFormData({ ...formData, responsible_member: value })}>
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Select responsible member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {responsibleMembers.map((member: any) => (
+                            <SelectItem key={member.id} value={member.id.toString()}>
+                              {member.name || member.username}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+                
+                <DialogFooter className="gap-2 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsDialogOpen(false)}
+                    className="w-full sm:w-auto"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {createMutation.isPending || updateMutation.isPending ? 'Saving...' : (editingUserId ? 'Update User' : 'Create User')}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+        
         <ImageCropperDialog
           isOpen={isCropperOpen}
           onClose={() => setIsCropperOpen(false)}
@@ -429,7 +462,7 @@ const ManageUsers = () => {
             <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700">
               <Users className="h-5 w-5 text-slate-600 dark:text-slate-300" />
             </div>
-            All Users
+            All Users ({filteredUsers.length})
           </CardTitle>
           <CardDescription>
             Manage all members, leaders, and admins in the system
@@ -442,71 +475,79 @@ const ManageUsers = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Username</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
+                  <TableHead className="hidden md:table-cell">Email</TableHead>
+                  <TableHead className="hidden md:table-cell">Phone</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Marital Status</TableHead>
+                  <TableHead className="hidden sm:table-cell">Marital Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user: any) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={fixProfilePhotoUrl(user.profile_photo)} alt={user.name} />
-                          <AvatarFallback className="text-xs">
-                            {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        {user.name}
-                      </div>
+                {filteredUsers.length === 0 ? (
+                   <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        No users found matching "{searchQuery}"
                     </TableCell>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-slate-400" />
-                        {user.email || 'Not provided'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-slate-400" />
-                        {user.phone || 'Not provided'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize">
-                        {user.role.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {user.marital_status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => handleEdit(user)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => handleDeleteClick(user)}
-                          className="hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                   </TableRow>
+                ) : (
+                    filteredUsers.map((user: any) => (
+                    <TableRow key={user.id}>
+                        <TableCell className="font-medium">
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                            <AvatarImage src={fixProfilePhotoUrl(user.profile_photo)} alt={user.name} />
+                            <AvatarFallback className="text-xs">
+                                {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                            </AvatarFallback>
+                            </Avatar>
+                            {user.name}
+                        </div>
+                        </TableCell>
+                        <TableCell>{user.username}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                        <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-slate-400" />
+                            {user.email || '-'}
+                        </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                        <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-slate-400" />
+                            {user.phone || '-'}
+                        </div>
+                        </TableCell>
+                        <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                            {user.role.replace('_', ' ')}
+                        </Badge>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                        <Badge variant="outline">
+                            {user.marital_status}
+                        </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                            <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleEdit(user)}
+                            >
+                            <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleDeleteClick(user)}
+                            className="hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20"
+                            >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                        </div>
+                        </TableCell>
+                    </TableRow>
+                    ))
+                )}
               </TableBody>
             </Table>
           </div>

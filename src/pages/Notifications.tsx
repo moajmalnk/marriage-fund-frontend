@@ -14,28 +14,39 @@ import {
 import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification } from '@/services/notifications';
-import { useAuth } from '@/contexts/AuthContext'; // Import Auth
-import api from '@/lib/api'; // Import API for custom call
+import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 import { Notification } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Notifications = () => {
-  const { currentUser } = useAuth(); // Get current user
+  const { currentUser } = useAuth();
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
   
-  // Announcement State
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
-  const [announcementData, setAnnouncementData] = useState({ title: '', message: '' });
+  const [announcementData, setAnnouncementData] = useState({ 
+    title: '', 
+    message: '', 
+    priority: 'HIGH' 
+  });
 
-  // --- API Data ---
+  // Fixed state reset to only happen on first open, not every time modal opens
+  const handleOpenChange = (open: boolean) => {
+    setShowAnnouncementModal(open);
+    if (open && (!announcementData.title && !announcementData.message)) {
+      // Only reset if fields are empty (first time opening)
+      setAnnouncementData({ title: '', message: '', priority: 'HIGH' });
+    }
+  };
+
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: fetchNotifications,
   });
 
-  // --- Mutations ---
   const markReadMutation = useMutation({
     mutationFn: markNotificationRead,
     onSuccess: () => {
@@ -61,15 +72,21 @@ const Notifications = () => {
     }
   });
 
+  // [FIXED MUTATION] Removed the line that was causing the bug
   const announceMutation = useMutation({
-    mutationFn: async (data: { title: string; message: string }) => {
+    mutationFn: async (data: { title: string; message: string; priority: string }) => {
       const response = await api.post('/notifications/announce/', data);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      
+      // Close Modal immediately
       setShowAnnouncementModal(false);
-      setAnnouncementData({ title: '', message: '' });
+      
+      // [DELETED LINE] setAnnouncementData(...) is REMOVED from here.
+      // This prevents the "Priority: HIGH" race condition.
+      
       toast({ title: "Sent", description: "Announcement broadcast to all members" });
     },
     onError: () => {
@@ -77,7 +94,21 @@ const Notifications = () => {
     }
   });
 
-  // --- Helpers ---
+  const handleAnnounce = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if(announceMutation.isPending) return;
+
+      if(!announcementData.title || !announcementData.message) {
+        toast({ title: "Missing Fields", description: "Please fill in title and message", variant: "destructive" });
+        return;
+      }
+      
+      announceMutation.mutate(announcementData);
+  };
+
+  // ... (Rest of your helper functions: getNotificationIcon, getNotificationColor, etc. remain unchanged) ...
   const getNotificationIcon = (type: string) => {
     const t = type?.toLowerCase() || 'info';
     switch (t) {
@@ -138,11 +169,6 @@ const Notifications = () => {
     }
   };
 
-  const handleAnnounce = () => {
-      if(!announcementData.title || !announcementData.message) return;
-      announceMutation.mutate(announcementData);
-  };
-
   const unreadCount = useMemo(() => notifications.filter((n: Notification) => !n.is_read).length, [notifications]);
   const totalCount = notifications.length;
   const highPriorityCount = useMemo(() => notifications.filter((n: Notification) => n.priority === 'HIGH' && !n.is_read).length, [notifications]);
@@ -159,7 +185,7 @@ const Notifications = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
-      {/* Header */}
+      {/* ... (Header and Stats sections remain identical) ... */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Notifications</h1>
@@ -171,26 +197,25 @@ const Notifications = () => {
             {unreadCount} unread
           </Badge>
           
-          {/* Mark All Read Button */}
           {unreadCount > 0 && (
             <Button onClick={() => markAllReadMutation.mutate()} variant="outline" size="sm" className="gap-2">
               <Check className="h-4 w-4" /> Mark all read
             </Button>
           )}
 
-          {/* Admin Announcement Button */}
           {currentUser?.role === 'admin' && (
-            <Dialog open={showAnnouncementModal} onOpenChange={setShowAnnouncementModal}>
+            <Dialog open={showAnnouncementModal} onOpenChange={handleOpenChange}>
                 <DialogTrigger asChild>
                     <Button size="sm" className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white">
                         <Megaphone className="h-4 w-4" /> Broadcast
                     </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Broadcast Announcement</DialogTitle>
                         <DialogDescription>Send a wedding or general announcement to all members.</DialogDescription>
                     </DialogHeader>
+                    
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                             <Label>Title</Label>
@@ -200,6 +225,36 @@ const Notifications = () => {
                                 onChange={(e) => setAnnouncementData({...announcementData, title: e.target.value})}
                             />
                         </div>
+
+                        <div className="grid gap-2">
+                            <Label>Priority Level</Label>
+                            <Select 
+                                value={announcementData.priority} 
+                                onValueChange={(val) => setAnnouncementData({...announcementData, priority: val})}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select priority" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="HIGH">
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full bg-red-500" /> High (Urgent)
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="MEDIUM">
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full bg-yellow-500" /> Medium (Normal)
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="LOW">
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full bg-blue-500" /> Low (Info)
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
                         <div className="grid gap-2">
                             <Label>Message</Label>
                             <Textarea 
@@ -209,9 +264,15 @@ const Notifications = () => {
                             />
                         </div>
                     </div>
+                    
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setShowAnnouncementModal(false)}>Cancel</Button>
-                        <Button onClick={handleAnnounce} disabled={announceMutation.isPending} className="bg-indigo-600 text-white">
+                        <Button 
+                            type="button" 
+                            onClick={handleAnnounce} 
+                            disabled={announceMutation.isPending} 
+                            className="bg-indigo-600 text-white"
+                        >
                             {announceMutation.isPending ? "Sending..." : "Send Broadcast"}
                         </Button>
                     </DialogFooter>
@@ -221,8 +282,9 @@ const Notifications = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Same as before */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4">
+        {/* ... (Same 4 cards) ... */}
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
           <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center gap-2 sm:gap-3">

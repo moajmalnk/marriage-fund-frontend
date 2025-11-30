@@ -17,6 +17,7 @@ import ManageUsers from "./pages/ManageUsers";
 import Install from "./pages/Install";
 import Layout from "./components/Layout";
 import NotFound from "./pages/NotFound";
+import WalletApprovals from "./pages/WalletApprovals";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -94,6 +95,7 @@ function AppContent() {
         <Route path="/notifications" element={<Layout><Notifications /></Layout>} />
         <Route path="/profile" element={<Layout><Profile /></Layout>} />
         <Route path="/manage-users" element={<Layout><ManageUsers /></Layout>} />
+        <Route path="/wallet-approvals" element={<Layout><WalletApprovals /></Layout>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

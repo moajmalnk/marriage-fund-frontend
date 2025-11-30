@@ -20,10 +20,15 @@ const DatePicker: React.FC<DatePickerProps> = ({
   error = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(
-    value ? new Date(value) : null
-  );
+  // Use value if present, otherwise default to Today for the calendar view
+  const [currentMonth, setCurrentMonth] = useState(value ? new Date(value) : new Date());
+  
+  // Initialize selectedDate safely handling timezone offsets
+  const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
+    if (!value) return null;
+    return new Date(value);
+  });
+  
   const datePickerRef = useRef<HTMLDivElement>(null);
 
   const months = [
@@ -33,7 +38,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Close date picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
@@ -45,7 +49,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Update selected date when value prop changes
   useEffect(() => {
     if (value) {
       setSelectedDate(new Date(value));
@@ -64,12 +67,10 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
     const days = [];
     
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
     
-    // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
     }
@@ -79,7 +80,14 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
-    const formattedDate = date.toISOString().split('T')[0];
+    
+    // [FIX] Use Local Time construction instead of toISOString()
+    // This prevents the "Yesterday" bug caused by timezone conversion
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+    
     onChange(formattedDate);
     setIsOpen(false);
   };
@@ -94,11 +102,16 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
   const isToday = (date: Date) => {
     const today = new Date();
-    return date.toDateString() === today.toDateString();
+    return date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
   };
 
   const isSelected = (date: Date) => {
-    return selectedDate && date.toDateString() === selectedDate.toDateString();
+    if (!selectedDate) return false;
+    return date.getDate() === selectedDate.getDate() &&
+      date.getMonth() === selectedDate.getMonth() &&
+      date.getFullYear() === selectedDate.getFullYear();
   };
 
   const formatDisplayDate = (date: Date) => {
@@ -113,13 +126,12 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
   return (
     <div className="relative" ref={datePickerRef}>
-      {/* Date Input Trigger */}
       <button
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "w-full h-10 sm:h-12 px-3 sm:px-4 border-2 rounded-lg transition-all duration-200 flex items-center justify-between text-left text-sm sm:text-base",
+          "w-full h-12 px-4 border-2 rounded-lg transition-all duration-200 flex items-center justify-between text-left",
           "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100",
           "hover:border-blue-400 dark:hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20",
           error
@@ -129,8 +141,8 @@ const DatePicker: React.FC<DatePickerProps> = ({
           className
         )}
       >
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
+        <div className="flex items-center gap-3">
+          <Calendar className="h-4 w-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
           <span className={cn(
             selectedDate ? "text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400",
             "truncate"
@@ -139,14 +151,13 @@ const DatePicker: React.FC<DatePickerProps> = ({
           </span>
         </div>
         <ChevronRight className={cn(
-          "h-3 w-3 sm:h-4 sm:w-4 text-slate-500 dark:text-slate-400 transition-transform duration-200 flex-shrink-0",
+          "h-4 w-4 text-slate-500 dark:text-slate-400 transition-transform duration-200 flex-shrink-0",
           isOpen && "rotate-90"
         )} />
       </button>
 
-      {/* Date Picker Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-72 sm:w-80 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 p-3 sm:p-4">
+        <div className="absolute top-full left-0 mt-2 w-80 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 p-4">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <button
@@ -168,7 +179,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
             </button>
           </div>
 
-          {/* Days of Week Header */}
+          {/* Days of Week */}
           <div className="grid grid-cols-7 gap-1 mb-2">
             {days.map((day) => (
               <div

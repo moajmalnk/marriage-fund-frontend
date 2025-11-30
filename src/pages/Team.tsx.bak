@@ -424,23 +424,23 @@ const Team = () => {
 
     const totalUsers = (dashboardStats.demographics?.married || 0) + (dashboardStats.demographics?.unmarried || 0);
     
-    // Use the backend-calculated system_target directly
-    // Backend logic: Total Marriage Fund = One person target * total non-admin members
-    // One person target = (non-admin members - 1) * 5000
-    const totalMarriageAmount = dashboardStats.system_target || 0;
+    let perPersonTarget = dashboardStats.system_target;
     
-    // Calculate per person target from the total
-    const perPersonTarget = totalUsers > 0 ? totalMarriageAmount / totalUsers : 0;
+    if (!perPersonTarget || perPersonTarget === 0) {
+       const payingMemberCount = Math.max(0, totalUsers - 1);
+       perPersonTarget = payingMemberCount * 5000;
+    }
+   const grandTotalTarget = perPersonTarget * totalUsers;
 
     const totalPaidAmount = dashboardStats.financials?.collected || 0;
     const spendAmount = dashboardStats.financials?.disbursed || 0;
     const balanceAmount = dashboardStats.financials?.balance || 0;
-    const toCollectAmount = Math.max(0, totalMarriageAmount - totalPaidAmount);
-    const progressPercentage = totalMarriageAmount > 0 ? (totalPaidAmount / totalMarriageAmount) * 100 : 0;
+    const toCollectAmount = Math.max(0, grandTotalTarget - totalPaidAmount);
+    const progressPercentage = grandTotalTarget > 0 ? (totalPaidAmount / grandTotalTarget) * 100 : 0;
     
     return {
       totalUsers,
-      totalMarriageAmount,
+      totalMarriageAmount: grandTotalTarget,
       perPersonTarget, // Passing this down to TeamCards
       totalPaidAmount,
       spendAmount,

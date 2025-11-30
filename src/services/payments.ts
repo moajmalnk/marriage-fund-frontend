@@ -7,21 +7,40 @@ export const fetchPayments = async () => {
 };
 
 export const createPayment = async (paymentData: any) => {
-  // Ensure `user` is sent as a numeric id (DRF accepts either, but keep payload consistent)
+  // Create a clean copy of the data
   const payload = { ...paymentData };
-  if (payload.user && typeof payload.user === 'string') {
-    const n = Number(payload.user);
-    payload.user = Number.isNaN(n) ? payload.user : n;
-  }
-  
-  // Ensure user is always sent as a number
-  if (typeof payload.user === 'string') {
-    payload.user = parseInt(payload.user, 10);
-  }
   
   // Ensure transaction_type is properly set
   if (!payload.transaction_type) {
     payload.transaction_type = 'COLLECT'; // Default to collection
+  }
+
+  // Handle user ID properly - send as string to let backend handle conversion
+  if (payload.user && typeof payload.user !== 'string') {
+    payload.user = String(payload.user);
+  }
+  
+  // Handle time format properly
+  if (payload.time && typeof payload.time === 'string') {
+    // Ensure time is in HH:MM:SS format
+    const timeParts = payload.time.split(':');
+    if (timeParts.length === 1) {
+      // Just hours
+      payload.time = `${timeParts[0]}:00:00`;
+    } else if (timeParts.length === 2) {
+      // Hours and minutes
+      payload.time = `${payload.time}:00`;
+    }
+  }
+  
+  // Ensure request_id is an integer if present
+  if (payload.request_id && typeof payload.request_id === 'string') {
+    const requestIdInt = parseInt(payload.request_id, 10);
+    if (!isNaN(requestIdInt)) {
+      payload.request_id = requestIdInt;
+    } else {
+      delete payload.request_id; // Remove invalid request_id
+    }
   }
 
   const response = await api.post('/payments/', payload);
@@ -29,23 +48,42 @@ export const createPayment = async (paymentData: any) => {
 };
 
 export const updatePayment = async (paymentId: string, paymentData: any) => {
-  // Ensure `user` is sent as a numeric id (DRF accepts either, but keep payload consistent)
+  // Create a clean copy of the data
   const payload = { ...paymentData };
-  if (payload.user && typeof payload.user === 'string') {
-    const n = Number(payload.user);
-    payload.user = Number.isNaN(n) ? payload.user : n;
-  }
-  
-  // Ensure user is always sent as a number
-  if (typeof payload.user === 'string') {
-    payload.user = parseInt(payload.user, 10);
-  }
   
   // Ensure transaction_type is properly set
   if (!payload.transaction_type) {
     payload.transaction_type = 'COLLECT'; // Default to collection
   }
+
+  // Handle user ID properly - send as string to let backend handle conversion
+  if (payload.user && typeof payload.user !== 'string') {
+    payload.user = String(payload.user);
+  }
   
+  // Handle time format properly
+  if (payload.time && typeof payload.time === 'string') {
+    // Ensure time is in HH:MM:SS format
+    const timeParts = payload.time.split(':');
+    if (timeParts.length === 1) {
+      // Just hours
+      payload.time = `${timeParts[0]}:00:00`;
+    } else if (timeParts.length === 2) {
+      // Hours and minutes
+      payload.time = `${payload.time}:00`;
+    }
+  }
+  
+  // Ensure request_id is an integer if present
+  if (payload.request_id && typeof payload.request_id === 'string') {
+    const requestIdInt = parseInt(payload.request_id, 10);
+    if (!isNaN(requestIdInt)) {
+      payload.request_id = requestIdInt;
+    } else {
+      delete payload.request_id; // Remove invalid request_id
+    }
+  }
+
   const response = await api.patch(`/payments/${paymentId}/`, payload);
   return response.data;
 };

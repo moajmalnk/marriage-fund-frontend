@@ -28,3 +28,8 @@ export const declineFundRequest = async ({ id, reason }: { id: string; reason: s
   });
   return response.data;
 };
+
+export const fetchApprovedUnpaidRequests = async () => {
+  const response = await api.get('/fund-requests/approved_unpaid/');
+  return response.data;
+};

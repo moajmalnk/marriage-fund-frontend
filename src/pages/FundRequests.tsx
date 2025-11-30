@@ -658,7 +658,7 @@ const FundRequests = () => {
 
       {/* Create Request Dialog */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg bg-blue-500 text-white">
@@ -743,7 +743,7 @@ const FundRequests = () => {
 
       {/* Approve Request Dialog */}
       <Dialog open={showApproveModal} onOpenChange={closeModals}>
-        <DialogContent className="sm:max-w-[500px]">
+       <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg bg-green-500 text-white">
@@ -827,7 +827,7 @@ const FundRequests = () => {
 
       {/* Decline Request Dialog */}
       <Dialog open={showDeclineModal} onOpenChange={closeModals}>
-        <DialogContent className="sm:max-w-[500px]">
+       <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg bg-red-500 text-white">
@@ -984,7 +984,7 @@ const FundRequests = () => {
 
       {/* Wallet Deposit Dialog */}
       <Dialog open={showWalletModal} onOpenChange={setShowWalletModal}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg bg-green-500 text-white">

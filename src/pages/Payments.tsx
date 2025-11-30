@@ -23,15 +23,13 @@ import { fetchUsers } from '@/services/users';
 import { fetchDashboardStats } from '@/services/dashboard';
 import api from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import { fetchApprovedUnpaidRequests } from '@/services/fundRequests';
 
-// Get the API base URL to properly construct media URLs
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
 
-// Function to fix profile photo URLs
 const fixProfilePhotoUrl = (photoUrl: string) => {
   if (photoUrl && photoUrl.startsWith('/media/')) {
-    // Prepend the backend base URL to make it a full URL
     return `${BACKEND_BASE_URL}${photoUrl}`;
   }
   return photoUrl;
@@ -41,7 +39,6 @@ const Payments = () => {
   const { currentUser, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
 
-  // --- STATE ---
   const [selectedMember, setSelectedMember] = useState('');
   const [amount, setAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
@@ -50,7 +47,8 @@ const Payments = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   
-  // CRUD Modal States
+  const [selectedRequestId, setSelectedRequestId] = useState<string>('');
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'delete'>('create');
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
@@ -79,6 +77,12 @@ const Payments = () => {
     enabled: !!currentUser,
   });
 
+  const { data: approvedRequests = [] } = useQuery({
+    queryKey: ['approvedUnpaidRequests'],
+    queryFn: fetchApprovedUnpaidRequests,
+    enabled: !!currentUser && (currentUser.role === 'admin' || currentUser.role === 'responsible_member'),
+  });
+
   const userPhotos = useMemo(() => {
     const map: Record<string, string> = {};
     if (Array.isArray(allUsers)) {
@@ -89,33 +93,24 @@ const Payments = () => {
     return map;
   }, [allUsers]);
 
-  // Helper: Calculate Dynamic Target
   const getMemberTarget = (member: any) => {
     const assigned = Number(member.assigned_monthly_amount);
-    // If assigned > 0, use specific target. Otherwise use system dynamic target.
     return assigned > 0 ? assigned : (dashboardStats?.system_target || 5000);
   };
 
-  // Helper: Calculate Total Collected Amount for a Member
   const getMemberTotalCollected = (memberId: string) => {
     if (!payments || !Array.isArray(payments)) return 0;
-    
     return payments
-      .filter((p: any) => 
-        p.user.toString() === memberId.toString() && 
-        p.transaction_type === 'COLLECT'
-      )
+      .filter((p: any) => p.user.toString() === memberId.toString() && p.transaction_type === 'COLLECT')
       .reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
   };
 
-  // Helper: Calculate Remaining Amount to Collect for a Member
   const getMemberRemainingToCollect = (member: any) => {
     const target = getMemberTarget(member);
     const collected = getMemberTotalCollected(member.id);
     return Math.max(0, target - collected);
   };
 
-  // Helper: Format Time properly (e.g. 2:30 PM)
   const formatTime = (timeStr: string) => {
     if (!timeStr) return "--";
     try {
@@ -123,7 +118,6 @@ const Payments = () => {
       const h = parseInt(hours, 10);
       const m = parseInt(minutes, 10);
       if (isNaN(h) || isNaN(m)) return timeStr;
-      
       const suffix = h >= 12 ? 'PM' : 'AM';
       const formattedHour = h % 12 || 12;
       return `${formattedHour}:${m.toString().padStart(2, '0')} ${suffix}`;
@@ -132,22 +126,39 @@ const Payments = () => {
     }
   };
 
+  // [FIXED] Smart Dropdown Selection Logic for MAIN FORM
+  const handleMainFormRequestSelect = (requestId: string) => {
+    const request = approvedRequests.find((r: any) => r.id.toString() === requestId);
+    if (request) {
+        // Calculate Remaining Amount
+        const totalAmount = Number(request.amount);
+        const paidSoFar = Number(request.paid_amount || 0);
+        const remaining = Math.max(0, totalAmount - paidSoFar);
+
+        setSelectedMember(request.user.toString());
+        setAmount(remaining.toString()); // <--- FIX: Use Remaining, not Total
+        
+        setNotes(`Disbursement for Request #${requestId} (${request.reason}). Total: ${totalAmount}, Paid: ${paidSoFar}, Paying: ${remaining}`);
+        setSelectedRequestId(requestId);
+        if (errors.member) setErrors(prev => ({ ...prev, member: '' }));
+    }
+  };
+
   // --- MUTATIONS ---
   const createMutation = useMutation({
     mutationFn: createPayment,
     onSuccess: async () => {
-      // 1. Refresh Data
       await queryClient.invalidateQueries({ queryKey: ['payments'] });
       await queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+      await queryClient.invalidateQueries({ queryKey: ['approvedUnpaidRequests'] });
       
-      // 2. Clear form inputs
       setSelectedMember('');
       setAmount('');
       setPaymentDate('');
       setNotes('');
+      setSelectedRequestId('');
       setErrors({});
       
-      // 3. Show Success UI
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       
@@ -158,9 +169,38 @@ const Payments = () => {
       });
     },
     onError: (error: any) => {
+      console.error("Payment creation error:", error);
+      let errorMessage = "Failed to record payment";
+      
+      // Extract more detailed error information
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data.detail) {
+          errorMessage = error.response.data.detail;
+        } else if (typeof error.response.data === 'object') {
+          // Handle field-specific errors
+          const errorFields = Object.keys(error.response.data);
+          if (errorFields.length > 0) {
+            const firstField = errorFields[0];
+            const fieldError = error.response.data[firstField];
+            errorMessage = Array.isArray(fieldError) ? fieldError[0] : fieldError;
+            
+            // If we have multiple field errors, show them all
+            if (errorFields.length > 1) {
+              const allErrors = errorFields.map(field => {
+                const fieldErr = error.response.data[field];
+                return `${field}: ${Array.isArray(fieldErr) ? fieldErr[0] : fieldErr}`;
+              }).join(', ');
+              errorMessage = allErrors;
+            }
+          }
+        }
+      }
+      
       toast({ 
         title: "Error", 
-        description: error.response?.data?.detail || "Failed to record payment", 
+        description: errorMessage,
         variant: "destructive" 
       });
     }
@@ -206,16 +246,16 @@ const Payments = () => {
     }
 
     createMutation.mutate({
-      user: selectedMember || currentUser?.id,
+      user: selectedMember || String(currentUser?.id),
       amount: parseFloat(amount),
       date: paymentDate,
       transaction_type: paymentType === 'collect' ? 'COLLECT' : 'DISBURSE',
       notes: notes,
-      time: new Date().toTimeString().split(' ')[0],
+      time: new Date().toTimeString().substring(0, 8),
+      ...(selectedRequestId && { request_id: parseInt(selectedRequestId, 10) }) 
     });
   };
 
-  // CRUD Handlers
   const handleEditPayment = (payment: any) => {
     setModalMode('edit');
     setSelectedPayment(payment);
@@ -231,6 +271,9 @@ const Payments = () => {
   const handleModalSave = (data: any) => {
     if (modalMode === 'edit' && selectedPayment) {
       updateMutation.mutate({ id: selectedPayment.id, data });
+    } else if (modalMode === 'create') {
+        createMutation.mutate(data);
+        setIsModalOpen(false);
     }
   };
 
@@ -243,7 +286,6 @@ const Payments = () => {
     setSelectedPayment(null);
   };
 
-  // Ensure responsible members can only collect payments
   useEffect(() => {
     if (currentUser?.role === 'responsible_member' && paymentType === 'pay') {
       setPaymentType('collect');
@@ -253,24 +295,16 @@ const Payments = () => {
   // --- STATISTICS ---
   const stats = useMemo(() => {
     const total = payments.length;
-    const collected = payments
-      .filter((p: any) => p.transaction_type === 'COLLECT')
-      .reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
-      
-    const paid = payments
-      .filter((p: any) => p.transaction_type === 'DISBURSE')
-      .reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
-    
+    const collected = payments.filter((p: any) => p.transaction_type === 'COLLECT').reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
+    const paid = payments.filter((p: any) => p.transaction_type === 'DISBURSE').reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
     const now = new Date();
     const thisMonthPayments = payments.filter((p: any) => {
       const d = new Date(p.date);
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     });
-    
     const thisMonthCount = thisMonthPayments.length;
     const thisMonthTotal = thisMonthPayments.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
     const average = total > 0 ? (collected + paid) / total : 0;
-
     return { total, collected, paid, thisMonthCount, thisMonthTotal, average };
   }, [payments]);
 
@@ -306,7 +340,6 @@ const Payments = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
           <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -318,7 +351,6 @@ const Payments = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800">
           <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -330,7 +362,6 @@ const Payments = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border-purple-200 dark:border-purple-800">
           <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -343,7 +374,6 @@ const Payments = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-orange-950/30 border-orange-200 dark:border-orange-800">
           <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -355,7 +385,6 @@ const Payments = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
           <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -372,7 +401,7 @@ const Payments = () => {
         </Card>
       </div>
 
-      {/* Record Payment Form - Visible to Admin & Responsible Member */}
+      {/* Record Payment Form */}
       {(currentUser.role === 'admin' || currentUser.role === 'responsible_member') && (
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800 transition-all duration-500">
           <CardHeader>
@@ -389,8 +418,6 @@ const Payments = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
-            
-            {/* Success Message Banner */}
             {showSuccess && (
               <div className="mb-6 p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
                 <div className="p-1.5 rounded-full bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300 mt-0.5">
@@ -408,72 +435,132 @@ const Payments = () => {
             )}
 
             <form onSubmit={handleRecordPayment} className="space-y-6">
-              {currentUser.role === 'admin' && (
+             {currentUser.role === 'admin' && (
                 <div className="space-y-3">
                   <Label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
                     <DollarSign className="h-4 w-4" /> Payment Type
                   </Label>
-                  <div className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                      <input type="radio" id="collect" name="paymentType" value="collect" checked={paymentType === 'collect'} onChange={() => setPaymentType('collect')} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
-                      <Label htmlFor="collect" className="flex items-center gap-2 cursor-pointer">
+                  
+                  {/* [FIXED] Changed from 'flex' to 'grid' for mobile responsiveness */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
+                    {/* Collect Option */}
+                    <div 
+                      className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-all ${
+                        paymentType === 'collect' 
+                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20 ring-1 ring-green-500' 
+                          : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                      onClick={() => { setPaymentType('collect'); setSelectedRequestId(''); }}
+                    >
+                      <input 
+                        type="radio" 
+                        id="collect" 
+                        name="paymentType" 
+                        value="collect" 
+                        checked={paymentType === 'collect'} 
+                        onChange={() => {}} // Handled by parent div onClick
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" 
+                      />
+                      <Label htmlFor="collect" className="flex items-center gap-2 cursor-pointer w-full">
                         <ArrowDownCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-medium">Collect</span>
-                        <span className="text-xs text-slate-500">(Receive)</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">Collect</span>
+                          <span className="text-[10px] text-slate-500">(Receive Money)</span>
+                        </div>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <input type="radio" id="pay" name="paymentType" value="pay" checked={paymentType === 'pay'} onChange={() => setPaymentType('pay')} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
-                      <Label htmlFor="pay" className="flex items-center gap-2 cursor-pointer">
-                        <ArrowUpCircle className="h-4 w-4 text-red-600" />
-                        <span className="text-sm font-medium">Pay</span>
-                        <span className="text-xs text-slate-500">(Disburse)</span>
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              {currentUser.role !== 'admin' && (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" /> Payment Type
-                  </Label>
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                    <ArrowDownCircle className="h-5 w-5 text-green-600" />
-                    <div>
-                      <span className="text-sm font-medium text-green-800 dark:text-green-200">Collect Payment</span>
-                      <p className="text-xs text-green-600 dark:text-green-400">Receive payment from member</p>
+                    {/* Pay Option */}
+                    <div 
+                      className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-all ${
+                        paymentType === 'pay' 
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20 ring-1 ring-red-500' 
+                          : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                      onClick={() => { setPaymentType('pay'); setSelectedMember(''); setAmount(''); setNotes(''); }}
+                    >
+                      <input 
+                        type="radio" 
+                        id="pay" 
+                        name="paymentType" 
+                        value="pay" 
+                        checked={paymentType === 'pay'} 
+                        onChange={() => {}} // Handled by parent div onClick
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" 
+                      />
+                      <Label htmlFor="pay" className="flex items-center gap-2 cursor-pointer w-full">
+                        <ArrowUpCircle className="h-4 w-4 text-red-600" />
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">Pay</span>
+                          <span className="text-[10px] text-slate-500">(Disburse Money)</span>
+                        </div>
+                      </Label>
                     </div>
+
                   </div>
                 </div>
               )}
 
               <div className="space-y-2">
                 <Label htmlFor="member" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                  <User className="h-4 w-4" /> Select Member
+                  <User className="h-4 w-4" /> {paymentType === 'pay' ? 'Select Approved Request' : 'Select Member'}
                 </Label>
-                <Select value={selectedMember} onValueChange={(value) => {
-                  setSelectedMember(value);
-                  if (errors.member) setErrors(prev => ({ ...prev, member: '' }));
-                }}>
-                  <SelectTrigger className={`w-full h-12 px-4 border-2 transition-all duration-200 ${errors.member ? 'border-red-300' : 'border-slate-300'}`}>
-                    <SelectValue placeholder="Choose a member to record payment for" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700">
-                    {availableMembers.map((m: any) => (
-                      <SelectItem key={m.id} value={m.id.toString()} className="py-3">
-                        <div className="flex items-center justify-between w-full gap-4">
-                          <span className="font-medium">{m.name || m.username}</span>
-                          {/* Remaining to collect / target */}
-                          <Badge variant="outline" className="ml-2 text-xs whitespace-nowrap">
-                            ₹{getMemberRemainingToCollect(m).toLocaleString('en-IN')}/₹{getMemberTarget(m).toLocaleString('en-IN')}
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                
+                {paymentType === 'pay' ? (
+                    // [FIXED] PAY MODE: Show Approved Requests with Remaining Amount
+                    <Select value={selectedRequestId} onValueChange={handleMainFormRequestSelect}>
+                        <SelectTrigger className={`w-full h-12 px-4 border-2 transition-all duration-200 ${errors.member ? 'border-red-300' : 'border-slate-300'}`}>
+                            <SelectValue placeholder="Select approved request to pay..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700">
+                            {approvedRequests.length === 0 ? (
+                                <div className="p-2 text-sm text-center text-slate-500">No pending approvals</div>
+                            ) : (
+                                approvedRequests.map((req: any) => {
+                                    // Calculate Remaining Logic Visuals
+                                    const total = Number(req.amount);
+                                    const paid = Number(req.paid_amount || 0);
+                                    const remaining = Math.max(0, total - paid);
+                                    const isPartial = paid > 0;
+
+                                    return (
+                                        <SelectItem key={req.id} value={req.id.toString()} className="py-3">
+                                            <div className="flex items-center justify-between w-full gap-4">
+                                                <span className="font-medium">{req.user_name}</span>
+                                                <Badge variant="outline" className={`ml-2 text-xs ${isPartial ? 'bg-yellow-50 text-yellow-700' : 'bg-green-50 text-green-700'}`}>
+                                                    ₹{remaining.toLocaleString('en-IN')} Due
+                                                </Badge>
+                                            </div>
+                                        </SelectItem>
+                                    );
+                                })
+                            )}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    // COLLECT MODE: Show All Members
+                    <Select value={selectedMember} onValueChange={(value) => {
+                        setSelectedMember(value);
+                        if (errors.member) setErrors(prev => ({ ...prev, member: '' }));
+                    }}>
+                        <SelectTrigger className={`w-full h-12 px-4 border-2 transition-all duration-200 ${errors.member ? 'border-red-300' : 'border-slate-300'}`}>
+                            <SelectValue placeholder="Choose a member to record payment for" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700">
+                            {availableMembers.map((m: any) => (
+                                <SelectItem key={m.id} value={m.id.toString()} className="py-3">
+                                    <div className="flex items-center justify-between w-full gap-4">
+                                        <span className="font-medium">{m.name || m.username}</span>
+                                        <Badge variant="outline" className="ml-2 text-xs whitespace-nowrap">
+                                            ₹{getMemberRemainingToCollect(m).toLocaleString('en-IN')}/₹{getMemberTarget(m).toLocaleString('en-IN')}
+                                        </Badge>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
                 {errors.member && <div className="flex items-center gap-2 text-red-600 text-sm"><AlertCircle className="h-4 w-4" />{errors.member}</div>}
               </div>
 
@@ -541,7 +628,6 @@ const Payments = () => {
                 >
                   {createMutation.isPending ? (
                     <div className="flex items-center gap-2">
-                      {/* Custom CSS Spinner exactly like your snippet */}
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       {currentUser.role === 'admin' 
                         ? `Recording ${paymentType === 'collect' ? 'Collection' : 'Payment'}...`
@@ -568,7 +654,7 @@ const Payments = () => {
         </Card>
       )}
 
-      {/* Payment History Table */}
+      {/* Payment History Table - Same as before */}
       <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 border-slate-200 dark:border-slate-600">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
@@ -665,6 +751,8 @@ const Payments = () => {
         currentUserName={currentUser.name}
         mode={modalMode}
         isLoading={updateMutation.isPending || deleteMutation.isPending}
+        transactionType={paymentType} 
+        approvedRequests={approvedRequests} 
       />
     </div>
   );

@@ -14,17 +14,14 @@ import { updateUser } from '@/services/users';
 import { toast } from '@/hooks/use-toast';
 import api from '@/lib/api';
 import { fetchDashboardStats } from '@/services/dashboard';
-// Import the Cropper Component
 import { ImageCropperDialog } from '@/components/ImageCropperDialog';
 
 // Get the API base URL to properly construct media URLs
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
 
-// Function to fix profile photo URLs
 const fixProfilePhotoUrl = (photoUrl: string) => {
   if (photoUrl && photoUrl.startsWith('/media/')) {
-    // Prepend the backend base URL to make it a full URL
     return `${BACKEND_BASE_URL}${photoUrl}`;
   }
   return photoUrl;
@@ -34,21 +31,19 @@ const Profile = () => {
   const { currentUser, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
 
-  // --- UI STATE ---
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  
-  // --- CROPPER STATE ---
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
 
-  // --- FORM STATE ---
   const [formData, setFormData] = useState({
     name: '',
     username: '',
     marital_status: 'Unmarried',
     phone: '',
     email: '',
-    profile_photo: '' // Used for Preview URL
+    profile_photo: '',
+    password: '',       
+    confirmPassword: '' 
   });
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -59,7 +54,6 @@ const Profile = () => {
     enabled: !!currentUser,
   });
 
-  // 1. Fetch Payments for Statistics
   const { data: payments = [] } = useQuery({
     queryKey: ['payments'],
     queryFn: async () => {
@@ -68,7 +62,6 @@ const Profile = () => {
     }
   });
 
-  // Populate form when user loads
   useEffect(() => {
     if (currentUser) {
       setFormData({
@@ -77,19 +70,29 @@ const Profile = () => {
         marital_status: currentUser.marital_status || 'Unmarried',
         phone: currentUser.phone || '',
         email: currentUser.email || '',
-        profile_photo: fixProfilePhotoUrl(currentUser.profile_photo) || ''
+        profile_photo: fixProfilePhotoUrl(currentUser.profile_photo) || '',
+        password: '',       
+        confirmPassword: ''
       });
     }
   }, [currentUser]);
 
-  // 2. Update Mutation
   const updateMutation = useMutation({
     mutationFn: (data: FormData) => updateUser({ id: currentUser!.id, data }),
     onSuccess: () => {
-      toast({ title: "Success", description: "Profile updated successfully" });
+      // Refresh data without reloading page
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+      
+      toast({ 
+        title: "Success", 
+        description: "Profile updated successfully",
+        className: "bg-green-50 border-green-200 dark:bg-green-900 dark:border-green-800"
+      });
+      
+      // Clear password fields for security
+      setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
       setIsEditDialogOpen(false);
-      // Reload to refresh AuthContext context data
-      window.location.reload();
     },
     onError: (error: any) => {
       console.error("Update Error:", error);
@@ -103,38 +106,52 @@ const Profile = () => {
 
   if (!currentUser) return null;
 
-  // --- HANDLERS ---
-
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // 1. User selects a file -> Open Cropper
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         setTempImageSrc(e.target?.result as string);
-        setIsCropperOpen(true); // Open Modal
+        setIsCropperOpen(true);
       };
       reader.readAsDataURL(file);
-      
-      // Reset value to allow selecting same file again if needed
       event.target.value = ''; 
     }
   };
 
-  // 2. Cropper finished -> Update State
   const handleCropComplete = (croppedFile: File, previewUrl: string) => {
-    setPhotoFile(croppedFile); // Store raw file for upload
-    setFormData(prev => ({ ...prev, profile_photo: previewUrl })); // Update UI preview
+    setPhotoFile(croppedFile);
+    setFormData(prev => ({ ...prev, profile_photo: previewUrl }));
   };
 
-  // 3. Save Profile -> Send to Backend
-  const handleSaveProfile = () => {
+  // UPDATED: Now accepts an event
+  const handleSaveProfile = (e?: React.FormEvent) => {
+    if (e) e.preventDefault(); // Prevent default form submission
+
+    if (formData.password || formData.confirmPassword) {
+      if (formData.password !== formData.confirmPassword) {
+        toast({ 
+          title: "Error", 
+          description: "Passwords do not match", 
+          variant: "destructive" 
+        });
+        return;
+      }
+      if (formData.password.length < 6) {
+        toast({ 
+          title: "Error", 
+          description: "Password must be at least 6 characters", 
+          variant: "destructive" 
+        });
+        return;
+      }
+    }
+
     const data = new FormData();
-    
     const nameParts = formData.name.trim().split(' ');
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(' ') || '';
@@ -146,7 +163,10 @@ const Profile = () => {
     data.append('phone', formData.phone);
     data.append('marital_status', formData.marital_status);
 
-    // Append Photo ONLY if changed
+    if (formData.password) {
+      data.append('password', formData.password);
+    }
+
     if (photoFile) {
       data.append('profile_photo', photoFile);
     }
@@ -154,20 +174,16 @@ const Profile = () => {
     updateMutation.mutate(data);
   };
 
-  // --- STATISTICS LOGIC ---
+  // Statistics Logic (kept same)
   const userPayments = payments.filter((p: any) => String(p.user) === String(currentUser.id));
-  
   const totalPaid = userPayments
     .filter((p: any) => p.transaction_type === 'COLLECT')
     .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
-    
   const marriageTarget = Number(currentUser.assigned_monthly_amount) > 0 
     ? Number(currentUser.assigned_monthly_amount) 
     : (dashboardStats?.system_target || 0);
-
   const toCollect = marriageTarget - totalPaid;
   const progress = marriageTarget > 0 ? (totalPaid / marriageTarget) * 100 : 0;
-  
   const sortedPayments = [...userPayments].sort((a: any, b: any) => 
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
@@ -175,7 +191,6 @@ const Profile = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Profile</h1>
@@ -189,7 +204,7 @@ const Profile = () => {
               Edit Profile
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <div className="p-2 rounded-lg bg-blue-500 text-white"><Edit className="h-5 w-5" /></div>
@@ -198,76 +213,147 @@ const Profile = () => {
               <DialogDescription>Update your personal information and profile details.</DialogDescription>
             </DialogHeader>
             
-            <div className="grid gap-4 py-4">
-              
-              {/* --- PROFILE PHOTO UPLOAD (Overlay Strategy) --- */}
-              <div className="flex flex-col items-center gap-4 py-4">
-                <div className="relative inline-block">
-                  <Avatar className="h-24 w-24 border-2 border-slate-200 dark:border-slate-700">
-                    <AvatarImage src={fixProfilePhotoUrl(formData.profile_photo)} alt="Profile" className="object-cover" />
-                    <AvatarFallback className="text-2xl bg-slate-100 dark:bg-slate-800">
-                      {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  {/* Overlay Input for Reliable Clicking */}
-                  <div className="absolute -bottom-2 -right-2 p-2 bg-blue-600 text-white rounded-full shadow-lg z-10 border-2 border-white dark:border-slate-900 cursor-pointer hover:bg-blue-700 transition-colors">
-                    <Camera className="h-4 w-4" />
-                    <input 
-                      type="file" 
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      title="Change Profile Photo"
+            {/* UPDATED: Wrapped in form with autocomplete attributes */}
+            <form onSubmit={handleSaveProfile}>
+              <div className="grid gap-4 py-4">
+                
+                {/* Profile Photo Section (No changes here) */}
+                <div className="flex flex-col items-center gap-4 py-4">
+                  <div className="relative inline-block">
+                    <Avatar className="h-24 w-24 border-2 border-slate-200 dark:border-slate-700">
+                      <AvatarImage src={fixProfilePhotoUrl(formData.profile_photo)} alt="Profile" className="object-cover" />
+                      <AvatarFallback className="text-2xl bg-slate-100 dark:bg-slate-800">
+                        {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="absolute -bottom-2 -right-2 p-2 bg-blue-600 text-white rounded-full shadow-lg z-10 border-2 border-white dark:border-slate-900 cursor-pointer hover:bg-blue-700 transition-colors">
+                      <Camera className="h-4 w-4" />
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        title="Change Profile Photo"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Click the camera icon to update photo</p>
+                </div>
+
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input 
+                      id="name" 
+                      name="name"
+                      autoComplete="name"  // Added
+                      value={formData.name} 
+                      onChange={(e) => handleInputChange('name', e.target.value)} 
+                      className="h-12" 
                     />
                   </div>
-                </div>
-                <p className="text-xs text-muted-foreground">Click the camera icon to update photo</p>
-              </div>
-              {/* ----------------------------------- */}
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input 
+                      id="username" 
+                      name="username"
+                      autoComplete="username" // Added (Critical for removing the warning)
+                      value={formData.username} 
+                      onChange={(e) => handleInputChange('username', e.target.value)} 
+                      className="h-12" 
+                    />
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input 
+                      id="email" 
+                      name="email"
+                      type="email" 
+                      autoComplete="email" // Added
+                      value={formData.email} 
+                      onChange={(e) => handleInputChange('email', e.target.value)} 
+                      className="h-12" 
+                      placeholder="Enter your email address" 
+                    />
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input 
+                      id="phone" 
+                      name="phone"
+                      type="tel" 
+                      autoComplete="tel" // Added
+                      value={formData.phone} 
+                      onChange={(e) => handleInputChange('phone', e.target.value)} 
+                      className="h-12" 
+                      placeholder="Enter your phone number" 
+                    />
+                  </div>
+                  
+                  {/* Password Section */}
+                  {/* Browser Trick: Hidden username field right before password helps password managers */}
+                  <input type="text" name="username" autoComplete="username" style={{display: 'none'}} aria-hidden="true" />
 
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} className="h-12" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input id="username" value={formData.username} onChange={(e) => handleInputChange('username', e.target.value)} className="h-12" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} className="h-12" placeholder="Enter your email address" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" type="tel" value={formData.phone} onChange={(e) => handleInputChange('phone', e.target.value)} className="h-12" placeholder="Enter your phone number" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="marital_status">Marital Status</Label>
-                  <Select value={formData.marital_status} onValueChange={(value) => handleInputChange('marital_status', value)}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Married">Married</SelectItem>
-                      <SelectItem value="Unmarried">Unmarried</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="grid gap-2">
+                    <Label htmlFor="password">New Password (Optional)</Label>
+                    <Input 
+                      id="password" 
+                      name="password"
+                      type="password" 
+                      autoComplete="new-password" // Explicitly say this is a new password
+                      value={formData.password} 
+                      onChange={(e) => handleInputChange('password', e.target.value)} 
+                      className="h-12" 
+                      placeholder="Leave blank to keep current" 
+                    />
+                  </div>
+                  
+                  {/* Confirm Password */}
+                  {formData.password && (
+                    <div className="grid gap-2 animate-in slide-in-from-top-2 fade-in duration-300">
+                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                        <Input 
+                        id="confirmPassword" 
+                        name="confirmPassword"
+                        type="password" 
+                        autoComplete="new-password"
+                        value={formData.confirmPassword} 
+                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)} 
+                        className="h-12" 
+                        placeholder="Re-enter password" 
+                        />
+                    </div>
+                  )}
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="marital_status">Marital Status</Label>
+                    <Select value={formData.marital_status} onValueChange={(value) => handleInputChange('marital_status', value)}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Married">Married</SelectItem>
+                        <SelectItem value="Unmarried">Unmarried</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={updateMutation.isPending}>Cancel</Button>
-              <Button onClick={handleSaveProfile} disabled={updateMutation.isPending} className="bg-blue-600 hover:bg-blue-700 text-white">
-                {updateMutation.isPending ? 'Saving...' : (<><Edit className="h-4 w-4 mr-2" /> Save Changes</>)}
-              </Button>
-            </DialogFooter>
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={updateMutation.isPending}>Cancel</Button>
+                <Button type="submit" disabled={updateMutation.isPending} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  {updateMutation.isPending ? 'Saving...' : (<><Edit className="h-4 w-4 mr-2" /> Save Changes</>)}
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
 
-        {/* --- CROPPER COMPONENT --- */}
         <ImageCropperDialog
           isOpen={isCropperOpen}
           onClose={() => setIsCropperOpen(false)}
@@ -276,7 +362,7 @@ const Profile = () => {
         />
       </div>
 
-      {/* Profile Statistics Cards */}
+      {/* Rest of the Statistics Cards (kept same) */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
           <CardContent className="p-3 sm:p-4 lg:p-6">
@@ -291,6 +377,8 @@ const Profile = () => {
           </CardContent>
         </Card>
 
+        {/* ... (Other cards remain exactly the same as in your provided code) ... */}
+        
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
           <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center gap-2 sm:gap-3">
