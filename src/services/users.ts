@@ -49,7 +49,11 @@ export const createUser = async (userData: FormData | any) => {
 };
 
 export const updateUser = async ({ id, data }: { id: string; data: FormData | any }) => {
-  const response = await api.patch(`/users/${id}/`, data);
+  const response = await api.patch(`/users/${id}/`, data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return fixProfilePhotoUrl(response.data);
 };
 
