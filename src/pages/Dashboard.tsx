@@ -437,44 +437,46 @@ CBMS Marriage Fund Team
               weddingAnnouncements.map((announcement) => (
                 <div 
                   key={announcement.id} 
-                  className="flex items-center justify-between p-4 rounded-xl transition-all duration-200 hover:shadow-md bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/30 border border-pink-200 dark:border-pink-800"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl transition-all duration-200 hover:shadow-md bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/30 border border-pink-200 dark:border-pink-800 gap-4"
                 >
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="flex-shrink-0 p-2 rounded-lg bg-white dark:bg-slate-800 shadow-sm">
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                    <div className="flex-shrink-0 p-2 rounded-lg bg-white dark:bg-slate-800 shadow-sm mt-1 sm:mt-0">
                       <Heart className="h-5 w-5 text-pink-600 dark:text-pink-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
                         <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
                           {announcement.title}
                         </p>
-                        <Badge variant="outline" className="text-xs px-2 py-1 bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-200 border-pink-300 dark:border-pink-700">
+                        <Badge variant="outline" className="text-xs px-2 py-1 bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-200 border-pink-300 dark:border-pink-700 whitespace-nowrap">
                           Wedding
                         </Badge>
                       </div>
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 break-words">
                         {announcement.message}
                       </p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
+                        <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                           <Calendar className="h-3 w-3" />
                           <span>Announced: {new Date(announcement.created_at).toLocaleDateString('en-IN')}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                           <Gift className="h-3 w-3" />
                           <span>Contribution Required</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex-shrink-0 text-right ml-4">
+                  
+                  {/* Right Side Info - Aligned with text on mobile via padding */}
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-1 pl-[3.25rem] sm:pl-0 sm:text-right w-full sm:w-auto">
                     <div className="flex items-center gap-2">
-                      <PartyPopper className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+                      <PartyPopper className="h-4 w-4 sm:h-5 sm:w-5 text-pink-600 dark:text-pink-400" />
                       <span className="text-xs font-medium text-pink-600 dark:text-pink-400">
                         Celebration
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 sm:mt-1">
                       ₹5,000 per member
                     </p>
                   </div>

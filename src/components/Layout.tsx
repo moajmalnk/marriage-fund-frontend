@@ -622,31 +622,34 @@ const Layout = ({ children }: LayoutProps) => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Terms of Use Dialog - IMPROVED RESPONSIVENESS */}
       <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
-        {/* Added flex flex-col to ensure content takes proper height on mobile */}
         <DialogContent className="flex flex-col w-full max-w-[95vw] md:max-w-4xl h-[92vh] sm:h-[85vh] p-0 gap-0 overflow-hidden">
           
-          {/* Header - Fixed */}
-          <DialogHeader className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex-shrink-0">
+          <DialogHeader className="p-4 sm:p-6 pr-12 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex-shrink-0 relative">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
               <div className="flex-1">
-                <DialogTitle className="flex items-center gap-2 text-base sm:text-lg mb-1">
-                  <div className="p-1.5 sm:p-2 rounded-lg bg-indigo-500 text-white flex-shrink-0">
+                <DialogTitle className="flex items-start gap-3 text-base sm:text-lg mb-1">
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-indigo-500 text-white flex-shrink-0 mt-0.5">
                     <FileCheck className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <span className="text-base sm:text-lg leading-tight">
-                    {isEnglishVersion 
-                      ? "CBMS Marriage Fund Regulations"
-                      : "CBMS വിവാഹക്കുറി നിയമാവലി"
-                    }
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-base sm:text-lg leading-tight font-bold">
+                      {isEnglishVersion 
+                        ? "CBMS Marriage Fund Regulations"
+                        : "CBMS വിവാഹക്കുറി നിയമാവലി"
+                      }
+                    </span>
+                    <span className="text-xs sm:text-sm font-normal text-slate-500 mt-1">
+                      {isEnglishVersion
+                        ? "Terms and Conditions"
+                        : "നിബന്ധനകളും വ്യവസ്ഥകളും"
+                      }
+                    </span>
+                  </div>
                 </DialogTitle>
-                <DialogDescription className="text-xs sm:text-sm text-slate-500">
-                  {isEnglishVersion
-                    ? "Terms and Conditions"
-                    : "നിബന്ധനകളും വ്യവസ്ഥകളും"
-                  }
+                {/* Hidden description for accessibility since we moved visual desc up */}
+                <DialogDescription className="sr-only">
+                  Terms and conditions agreement
                 </DialogDescription>
               </div>
             </div>
