@@ -166,18 +166,16 @@ const ManageUsers = () => {
     data.append('username', formData.username);
     data.append('first_name', firstName);
     data.append('last_name', lastName);
-    data.append('is_active', String(formData.is_active)); // Send Active Status
+    data.append('is_active', String(formData.is_active));
     
-    if (formData.email) data.append('email', formData.email);
-    if (formData.phone) data.append('phone', formData.phone);
+    data.append('email', formData.email);
+    data.append('phone', formData.phone);
     
     data.append('role', formData.role);
     data.append('marital_status', formData.marital_status);
     data.append('assigned_monthly_amount', formData.assigned_monthly_amount);
     
-    if (formData.responsible_member) {
-      data.append('responsible_member', formData.responsible_member);
-    }
+    data.append('responsible_member', formData.responsible_member || '');
 
     if (formData.password) {
       data.append('password', formData.password);
