@@ -9,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plus, Edit, Trash2, Users, Phone, Mail, Camera, Lock, Search, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Phone, Mail, Camera, Lock, Search, X, Ban, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch'; // Added Switch
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUsers, createUser, updateUser, deleteUser } from '@/services/users';
@@ -38,8 +39,9 @@ const ManageUsers = () => {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false); // Safety Dialog State
   
-  // [NEW] Search State
+  // Search State
   const [searchQuery, setSearchQuery] = useState('');
 
   // --- CROPPER STATE ---
@@ -58,6 +60,7 @@ const ManageUsers = () => {
     profile_photo: '', 
     responsible_member: '',
     assigned_monthly_amount: '0',
+    is_active: true // Added Active Status
   });
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -68,7 +71,7 @@ const ManageUsers = () => {
     queryFn: fetchUsers,
   });
 
-  // [NEW] Filter Users Logic
+  // Filter Users Logic
   const filteredUsers = users.filter((user: any) => {
     const query = searchQuery.toLowerCase();
     return (
@@ -103,7 +106,18 @@ const ManageUsers = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setIsDialogOpen(false);
       resetForm();
-      toast({ title: "Success", description: "User updated successfully" });
+      
+      // Handle Deactivate Dialog success
+      if (showDeactivateDialog) {
+        setShowDeactivateDialog(false);
+        toast({ 
+            title: "Deactivated", 
+            description: "User has been successfully deactivated.",
+            className: "bg-green-50 border-green-200 text-green-800"
+        });
+      } else {
+        toast({ title: "Success", description: "User updated successfully" });
+      }
     },
     onError: () => toast({ title: "Error", description: "Failed to update user", variant: "destructive" })
   });
@@ -115,6 +129,11 @@ const ManageUsers = () => {
       setDeleteDialogOpen(false);
       setUserToDelete(null);
       toast({ title: "Deleted", description: "User removed from system" });
+    },
+    onError: (error: any) => {
+        // If backend protects deletion (due to payments), show suggestion dialog
+        setDeleteDialogOpen(false);
+        setShowDeactivateDialog(true);
     }
   });
 
@@ -147,6 +166,7 @@ const ManageUsers = () => {
     data.append('username', formData.username);
     data.append('first_name', firstName);
     data.append('last_name', lastName);
+    data.append('is_active', String(formData.is_active)); // Send Active Status
     
     if (formData.email) data.append('email', formData.email);
     if (formData.phone) data.append('phone', formData.phone);
@@ -159,7 +179,6 @@ const ManageUsers = () => {
       data.append('responsible_member', formData.responsible_member);
     }
 
-    // Always append password if provided (for both Create AND Update)
     if (formData.password) {
       data.append('password', formData.password);
     }
@@ -211,7 +230,8 @@ const ManageUsers = () => {
       phone: user.phone || '',
       profile_photo: fixProfilePhotoUrl(user.profile_photo) || '', 
       responsible_member: user.responsible_member || '',
-      assigned_monthly_amount: user.assigned_monthly_amount?.toString() || '0'
+      assigned_monthly_amount: user.assigned_monthly_amount?.toString() || '0',
+      is_active: user.is_active // Load active status
     });
     setIsDialogOpen(true);
   };
@@ -227,12 +247,21 @@ const ManageUsers = () => {
     }
   };
 
+  const confirmDeactivate = () => {
+    if (userToDelete) {
+        const data = new FormData();
+        data.append('is_active', 'false');
+        updateMutation.mutate({ id: userToDelete.id, data });
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       username: '', name: '', password: '',
       role: 'member', marital_status: 'Unmarried',
       email: '', phone: '', profile_photo: '',
-      responsible_member: '', assigned_monthly_amount: '0'
+      responsible_member: '', assigned_monthly_amount: '0',
+      is_active: true
     });
     setPhotoFile(null);
     setEditingUserId(null);
@@ -248,7 +277,7 @@ const ManageUsers = () => {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          {/* [NEW] Search Input */}
+          {/* Search Input */}
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
@@ -394,6 +423,22 @@ const ManageUsers = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Account Activation Switch */}
+                  <div className="flex items-center justify-between space-x-2 border p-3 rounded-md sm:col-span-2">
+                    <div className="flex flex-col space-y-1">
+                      <Label htmlFor="is-active" className="text-sm font-medium">Account Status</Label>
+                      <span className="text-xs text-muted-foreground">
+                        {formData.is_active ? "User can log in" : "User is deactivated"}
+                      </span>
+                    </div>
+                    <Switch
+                      id="is-active"
+                      checked={formData.is_active}
+                      onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="marital_status">Marital Status</Label>
                     <Select value={formData.marital_status} onValueChange={(value: string) => setFormData({ ...formData, marital_status: value })}>
@@ -479,19 +524,20 @@ const ManageUsers = () => {
                   <TableHead className="hidden md:table-cell">Phone</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead className="hidden sm:table-cell">Marital Status</TableHead>
+                  <TableHead className="hidden sm:table-cell">Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
                    <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         No users found matching "{searchQuery}"
                     </TableCell>
                    </TableRow>
                 ) : (
                     filteredUsers.map((user: any) => (
-                    <TableRow key={user.id}>
+                     <TableRow key={user.id} className={!user.is_active ? "opacity-60 bg-slate-50 dark:bg-slate-900" : ""}>
                         <TableCell className="font-medium">
                         <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
@@ -500,7 +546,10 @@ const ManageUsers = () => {
                                 {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                             </AvatarFallback>
                             </Avatar>
-                            {user.name}
+                            <div>
+                                {user.name}
+                                {!user.is_active && <span className="text-xs text-red-500 block">(Inactive)</span>}
+                            </div>
                         </div>
                         </TableCell>
                         <TableCell>{user.username}</TableCell>
@@ -518,13 +567,20 @@ const ManageUsers = () => {
                         </TableCell>
                         <TableCell>
                         <Badge variant="outline" className="capitalize">
-                            {user.role.replace('_', ' ')}
+                             {user.role.replace('_', ' ')}
                         </Badge>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                         <Badge variant="outline">
                             {user.marital_status}
                         </Badge>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                            {user.is_active ? (
+                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>
+                            ) : (
+                                <Badge variant="destructive">Inactive</Badge>
+                            )}
                         </TableCell>
                         <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -533,7 +589,7 @@ const ManageUsers = () => {
                             variant="outline" 
                             onClick={() => handleEdit(user)}
                             >
-                            <Edit className="h-4 w-4" />
+                                <Edit className="h-4 w-4" />
                             </Button>
                             <Button 
                             size="sm" 
@@ -541,7 +597,7 @@ const ManageUsers = () => {
                             onClick={() => handleDeleteClick(user)}
                             className="hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-900/20"
                             >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                                <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                         </div>
                         </TableCell>
@@ -554,6 +610,7 @@ const ManageUsers = () => {
         </CardContent>
       </Card>
 
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -566,7 +623,50 @@ const ManageUsers = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              Delete
+               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Deactivate Recommendation Dialog */}
+      <AlertDialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
+        <AlertDialogContent className="sm:max-w-[500px]">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                    <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <AlertDialogTitle className="text-lg font-bold">Cannot Delete User</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-3 text-slate-600 dark:text-slate-300">
+              <p>
+                <strong>{userToDelete?.name}</strong> cannot be deleted because they have recorded payments or financial history.
+              </p>
+              <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm">
+                <p className="font-medium text-slate-900 dark:text-slate-100 mb-1">Why is this happening?</p>
+                Deleting this user would corrupt the financial records of your organization.
+              </div>
+              
+              <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                <span className="font-semibold not-italic">Tip:</span> If you absolutely must delete this user, you need to manually delete all their payment records from the Payments page first.
+              </p>
+
+              <p className="pt-2 font-medium text-slate-900 dark:text-slate-100">
+                Recommended Action:
+              </p>
+              <p>
+                Would you like to <strong>Deactivate</strong> them instead? This will prevent them from logging in, but keep their payment history safe.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel onClick={() => setShowDeactivateDialog(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+                onClick={confirmDeactivate} 
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+               <Ban className="h-4 w-4 mr-2" /> Deactivate User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

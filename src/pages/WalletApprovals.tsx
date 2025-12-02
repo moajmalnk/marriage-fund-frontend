@@ -7,13 +7,28 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle2, XCircle, Clock, Wallet, AlertCircle } from 'lucide-react';
-import { fixProfilePhotoUrl } from '@/lib/utils'; // Ensure this utility is imported
+import { CheckCircle2, XCircle, Wallet, AlertCircle } from 'lucide-react';
+import { fixProfilePhotoUrl } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const WalletApprovals = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  
+  // State for Confirmation Dialog
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    type: 'approve' | 'reject';
+    id: string | null;
+    userName: string;
+    amount: number;
+  }>({
+    isOpen: false,
+    type: 'approve',
+    id: null,
+    userName: '',
+    amount: 0
+  });
 
   // 1. Fetch Transactions
   const { data: transactions = [], isLoading } = useQuery({
@@ -27,10 +42,8 @@ const WalletApprovals = () => {
   // 2. Approve Mutation
   const approveMutation = useMutation({
     mutationFn: approveWalletTransaction,
-    onMutate: (id) => setProcessingId(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['walletTransactions'] });
-      // Also invalidate payments/dashboard since approval adds to collections
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
       
@@ -39,27 +52,52 @@ const WalletApprovals = () => {
         description: "Deposit verified and added to member's collection total.",
         className: "bg-green-50 border-green-200 text-green-800"
       });
-      setProcessingId(null);
+      closeConfirm();
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to approve transaction", variant: "destructive" });
-      setProcessingId(null);
+      closeConfirm();
     }
   });
 
   // 3. Reject Mutation
   const rejectMutation = useMutation({
     mutationFn: rejectWalletTransaction,
-    onMutate: (id) => setProcessingId(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['walletTransactions'] });
       toast({ title: "Rejected", description: "Deposit request rejected." });
-      setProcessingId(null);
+      closeConfirm();
     },
     onError: () => {
-      setProcessingId(null);
+        toast({ title: "Error", description: "Failed to reject transaction", variant: "destructive" });
+        closeConfirm();
     }
   });
+
+  // Handlers
+  const openConfirm = (type: 'approve' | 'reject', tx: any) => {
+    setConfirmConfig({
+        isOpen: true,
+        type,
+        id: tx.id,
+        userName: tx.user_name,
+        amount: Number(tx.amount)
+    });
+  };
+
+  const closeConfirm = () => {
+    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const handleConfirmAction = () => {
+    if (!confirmConfig.id) return;
+
+    if (confirmConfig.type === 'approve') {
+        approveMutation.mutate(confirmConfig.id);
+    } else {
+        rejectMutation.mutate(confirmConfig.id);
+    }
+  };
 
   if (isLoading) {
     return <div className="flex justify-center p-10"><div className="w-6 h-6 border-2 border-blue-600 rounded-full animate-spin"></div></div>;
@@ -140,22 +178,16 @@ const WalletApprovals = () => {
                             size="sm" 
                             variant="outline"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => rejectMutation.mutate(tx.id)}
-                            disabled={!!processingId}
+                            onClick={() => openConfirm('reject', tx)}
                           >
-                            {processingId === tx.id ? '...' : <XCircle className="h-4 w-4" />}
+                            <XCircle className="h-4 w-4" />
                           </Button>
                           <Button 
                             size="sm" 
                             className="bg-green-600 hover:bg-green-700 text-white"
-                            onClick={() => approveMutation.mutate(tx.id)}
-                            disabled={!!processingId}
+                            onClick={() => openConfirm('approve', tx)}
                           >
-                            {processingId === tx.id ? '...' : (
-                              <>
-                                <CheckCircle2 className="h-4 w-4 mr-2" /> Approve
-                              </>
-                            )}
+                            <CheckCircle2 className="h-4 w-4 mr-2" /> Approve
                           </Button>
                         </div>
                       </TableCell>
@@ -167,6 +199,56 @@ const WalletApprovals = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmConfig.isOpen} onOpenChange={closeConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+                {confirmConfig.type === 'approve' ? (
+                    <CheckCircle2 className="h-6 w-6 text-green-600" />
+                ) : (
+                    <AlertCircle className="h-6 w-6 text-red-600" />
+                )}
+                {confirmConfig.type === 'approve' ? 'Approve Deposit?' : 'Reject Deposit?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+                <p>
+                    Are you sure you want to <strong>{confirmConfig.type}</strong> this transaction?
+                </p>
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border text-sm">
+                    <div className="flex justify-between mb-1">
+                        <span className="text-slate-500">Member:</span>
+                        <span className="font-medium text-slate-900 dark:text-slate-100">{confirmConfig.userName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-slate-500">Amount:</span>
+                        <span className="font-bold text-slate-900 dark:text-slate-100">₹{confirmConfig.amount.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>
+                {confirmConfig.type === 'approve' ? (
+                    <p className="text-xs text-green-600">This will verify the funds and add them to the member's collection total.</p>
+                ) : (
+                    <p className="text-xs text-red-600">This will mark the transaction as invalid. The member will be notified.</p>
+                )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={approveMutation.isPending || rejectMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+                onClick={handleConfirmAction}
+                disabled={approveMutation.isPending || rejectMutation.isPending}
+                className={confirmConfig.type === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+            >
+                {approveMutation.isPending || rejectMutation.isPending ? (
+                    <>Processing...</>
+                ) : (
+                    <>{confirmConfig.type === 'approve' ? 'Yes, Approve' : 'Yes, Reject'}</>
+                )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
