@@ -95,7 +95,13 @@ const Payments = () => {
 
   const getMemberTarget = (member: any) => {
     const assigned = Number(member.assigned_monthly_amount);
-    return assigned > 0 ? assigned : (dashboardStats?.system_target || 5000);
+    if (assigned > 0) return assigned;
+
+    const totalMembers = (dashboardStats?.demographics?.married || 0) + (dashboardStats?.demographics?.unmarried || 0);
+    
+    if (totalMembers <= 1) return 0;
+    
+    return (totalMembers - 1) * 5000;
   };
 
   const getMemberTotalCollected = (memberId: string) => {
