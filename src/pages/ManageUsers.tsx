@@ -282,7 +282,10 @@ const ManageUsers = () => {
               placeholder="Search users..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9 h-10 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+              className="pl-9 pr-9 h-10 
+           bg-slate-50 dark:bg-slate-800 
+           border border-slate-300 dark:border-slate-700 
+           focus:ring-2 focus:ring-blue-500"
             />
             {searchQuery && (
               <button 
